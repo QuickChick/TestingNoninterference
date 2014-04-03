@@ -1,7 +1,7 @@
 {-# LANGUAGE ImplicitParams, FlexibleContexts, UndecidableInstances,
     RecordWildCards, TupleSections, GeneralizedNewtypeDeriving, StandaloneDeriving #-}
 
-module TMUAbstractObs where
+module ObservableInst where
 
 import Test.QuickCheck
 import Control.Monad
@@ -9,15 +9,15 @@ import Control.Applicative
 
 import Data.List ( (\\) )
 
-import TMULabels
-import TMUFlags
-import TMUObservable
-import TMUInstr
+import Labels
+import Flags
+import Observable
+import Instr
 
 import Util
 
-import TMUAbstract
-import TMUAbstractGen
+import Machine
+import Generation
 
 instance Flaggy DynFlags => Arbitrary AS where
   arbitrary = genAS vary

@@ -1,7 +1,7 @@
 {-# LANGUAGE ImplicitParams, FlexibleContexts, UndecidableInstances,
     RecordWildCards, TupleSections, MonoLocalBinds #-}
 
-module TMUAbstract where
+module Machine where
 
 import Test.QuickCheck.Gen
 import Test.QuickCheck
@@ -13,14 +13,14 @@ import Data.List ( find, groupBy)
 
 import Util
 import Pretty
-import Machine
+import GenericMachine
 import Trace
 import LaTeX
 
-import TMULabels
-import TMUFlags
-import TMUObservable
-import TMUInstr
+import Labels
+import Flags
+import Observable
+import Instr
 
 -- import Debug.Trace
 

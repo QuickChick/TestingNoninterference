@@ -1,5 +1,5 @@
 {-# LANGUAGE ImplicitParams, DeriveDataTypeable #-}
-module TMUFlags where
+module Flags where
 
 import Data.Typeable
 import Data.Data

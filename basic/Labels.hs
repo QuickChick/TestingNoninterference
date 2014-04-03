@@ -1,4 +1,4 @@
-module TMULabels where
+module Labels where
 
 import Test.QuickCheck.Gen
 import Test.QuickCheck

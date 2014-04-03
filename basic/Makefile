@@ -1,4 +1,4 @@
-execs = TMUDriver
+execs = Driver
 
 ## NB: A string containing a Haskell list
 # SIMPLEBUGS = "[ IfcBugArithNoTaint \
@@ -14,8 +14,8 @@ GENERIC_TMU_OPTIONS = --which-tmm-routine=NoTMMRoutine
 
 include ../Makefile.common
 
-tests : TMUDriver
-	-./TMUDriver
+tests : Driver
+	-./Driver
 
 temp:
 	make -f Makefile.picotables picotable-Cally-EENI-Low-Initial-ByExec2-True EXTRATMUARGS="--tmu-timeout=300" SANITY_CHECK=
@@ -28,9 +28,9 @@ temp1:
 
 #########################################################
 
-latex-counterexample-old: TMUDriver
+latex-counterexample-old: Driver
 	export FILENAME="../picopaper/counter-$(INSTRS)-$(PROP)-$(EQUIV)-$(BUG).tex" ; \
-	./TMUDriver \
+	./Driver \
 	  $(GENERIC_TMU_OPTIONS) \
 	  --gen-instrs=Instrs$(INSTRS) \
 	  --ifc-semantics="[IfcBug$(BUG)]" \
@@ -61,9 +61,9 @@ ce11:
 
 #########################################################
 
-latex-counterexample-aux: TMUDriver
+latex-counterexample-aux: Driver
 	-export FILENAME="../picopaper/counter-$(NAME).tex" ; \
-	./TMUDriver \
+	./Driver \
 	  $(GENERIC_TMU_OPTIONS) \
 	  --gen-instrs=Instrs$(INSTRS) \
 	  --ifc-semantics="[$(BUGS)]" \
@@ -307,16 +307,16 @@ latex-counterexamples: basic1 basic2 basic3 basic4 basic5 basic6 jumpy1 jumpy2 c
 
 #########################################################
 
-Makefile.picoprofiles: TMUDriver GenerateTablesMakefile.hs
+Makefile.picoprofiles: Driver GenerateTablesMakefile.hs
 	runhaskell GenerateTablesMakefile.hs --config=GenMakefileProf > Makefile.picoprofiles
 	runhaskell GenerateTablesMakefile.hs --config=GenTablesProf   > ../picopaper/picoprofile-names.tex
 
-picoprofiles: TMUDriver Makefile.picoprofiles
+picoprofiles: Driver Makefile.picoprofiles
 	$(MAKE) -f Makefile.picoprofiles
 
 picoprofile:
 	export FILENAME="../picopaper/prof-$(START)-$(STRATEGY)-$(SMART_INTS).tex" ; \
-	./TMUDriver \
+	./Driver \
 	  $(GENERIC_TMU_OPTIONS) \
 	  --gen-instrs=InstrsBasic \
 	  --ifc-semantics="[IfcDefault]" \
@@ -332,7 +332,7 @@ picoprofile:
 
 picoprofilevar:
 	export FILENAME="../picopaper/profvar-$(START)-$(STRATEGY)-$(SMART_INTS).tex" ; \
-	./TMUDriver \
+	./Driver \
 	  $(GENERIC_TMU_OPTIONS) \
 	  --gen-instrs=InstrsBasic \
 	  --ifc-semantics="[IfcDefault]" \
@@ -349,11 +349,11 @@ picoprofilevar:
 
 #########################################################
 
-Makefile.picotables: TMUDriver GenerateTablesMakefile.hs
+Makefile.picotables: Driver GenerateTablesMakefile.hs
 	runhaskell GenerateTablesMakefile.hs --config=GenMakefileRel > Makefile.picotables
 	runhaskell GenerateTablesMakefile.hs --config=GenTablesRel > ../picopaper/picotable-names.tex
 
-picotables: TMUDriver picosettings Makefile.picotables
+picotables: Driver picosettings Makefile.picotables
 	time $(MAKE) -f Makefile.picotables
 
 sanity-checks:
@@ -374,12 +374,12 @@ picotables-slow :
 SANITY_CHECK   = sanity-check
 MAKE_PICOTABLE = make-picotable
 
-picotables-sequence-eeni: TMUDriver picosettings Makefile.picotables
+picotables-sequence-eeni: Driver picosettings Makefile.picotables
 	time $(MAKE) picotable-Basic-EENI-Mem-Initial-Sequence-False -f Makefile.picotables
 	time $(MAKE) picotable-Basic-EENI-Mem-Initial-Sequence-True -f Makefile.picotables
 
 sanity-check:
-	./TMUDriver \
+	./Driver \
 	  $(GENERIC_TMU_OPTIONS) \
 	  --gen-instrs=Instrs$(INSTRS) \
 	  --ifc-semantics="[IfcDefault]" \
@@ -397,7 +397,7 @@ sanity-check:
 make-picotable: $(SANITY_CHECK)
 	export FILENAME="../picopaper/exp-$(INSTRS)-$(PROP)-$(EQUIV)-$(START)-$(STRATEGY)-$(SMART_INTS).tex" ; \
 	echo '\\gdef\\bugtableinfo{'$$FILENAME'}%' > $$FILENAME.tmp ; \
-	./TMUDriver \
+	./Driver \
 	  $(GENERIC_TMU_OPTIONS) \
 	  --gen-instrs=Instrs$(INSTRS) \
 	  --ifc-semantics="$(BUGS)" \
@@ -420,16 +420,16 @@ picosettings :
 #	echo '\\newcommand{\\TMUATTEMPTS}{$(TMUATTEMPTS)}' >> ../picopaper/expsettings.tex
 #	echo '\\newcommand{\\TMUTESTS}{$(TMUTESTS)}' >> ../picopaper/expsettings.tex
 
-%.picotables : TMUDriver %.picotableheader \
+%.picotables : Driver %.picotableheader \
 	$*.picobugs
 
-%.picotable : TMUDriver 
+%.picotable : Driver 
 	echo % Stats for $* > ../picopaper/exp-$*.tex
 	$(MAKE) $*.picobugs \
 	    >> ../picopaper/exp-$*.tex
 
 %.picobugs :
-	@./TMUDriver $(GENERIC_TMU_OPTIONS) \
+	@./Driver $(GENERIC_TMU_OPTIONS) \
 	             --show-counterexamples=False --gen-strategy=$* $(EXTRATMUARGS) \
 	             --ifc-semantics=$(SIMPLEBUGS) --tmu-prop-test=PropEENI --starting-as=StartQuasiInitial --gen-instrs=Instrs$(INSTRS) \
 	             --latex-output 
@@ -443,7 +443,7 @@ test-sequence:
 BUGS="[IfcBugArithNoTaint,IfcBugPushNoTaint,IfcBugLoadNoTaint,IfcBugStoreNoValueTaint,IfcBugStoreNoPointerTaint,IfcBugAllowWriteDownThroughHighPtr,IfcBugPopPopsReturns,IfcBugJumpNoRaisePc,IfcBugJumpLowerPc,IfcBugStoreNoPcTaint,IfcBugAllowWriteDownWithHighPc,IfcBugCallNoRaisePc,IfcBugReturnNoTaint,IfcBugValueOrVoidOnReturn]"
 
 test-sequence2:
-	./TMUDriver \
+	./Driver \
 	   --which-tmm-routine=NoTMMRoutine \
 	   --gen-instrs=InstrsCally \
 	   --ifc-semantics=$(BUGS) \
@@ -457,23 +457,23 @@ test-sequence2:
 	   --latex-output \
 
 test-genbyexec2:
-	./TMUDriver   --which-tmm-routine=NoTMMRoutine   --gen-instrs=InstrsCally   --ifc-semantics="[IfcBugArithNoTaint,IfcBugPushNoTaint,IfcBugLoadNoTaint,IfcBugStoreNoValueTaint,IfcBugStoreNoPointerTaint,IfcBugAllowWriteDownThroughHighPtr,IfcBugPopPopsReturns,IfcBugJumpNoRaisePc,IfcBugJumpLowerPc,IfcBugStoreNoPcTaint,IfcBugAllowWriteDownWithHighPc,IfcBugCallNoRaisePc,IfcBugReturnNoTaint,IfcBugValueOrVoidOnReturn]"   --tmu-prop-test=PropEENI   --equiv=EquivMem   --starting-as=StartInitial   --gen-strategy=GenByExec2   --smart-ints=True   --shrink-nothing=True   --show-counterexamples=False   --latex-output   --tmu-timeout=300
+	./Driver   --which-tmm-routine=NoTMMRoutine   --gen-instrs=InstrsCally   --ifc-semantics="[IfcBugArithNoTaint,IfcBugPushNoTaint,IfcBugLoadNoTaint,IfcBugStoreNoValueTaint,IfcBugStoreNoPointerTaint,IfcBugAllowWriteDownThroughHighPtr,IfcBugPopPopsReturns,IfcBugJumpNoRaisePc,IfcBugJumpLowerPc,IfcBugStoreNoPcTaint,IfcBugAllowWriteDownWithHighPc,IfcBugCallNoRaisePc,IfcBugReturnNoTaint,IfcBugValueOrVoidOnReturn]"   --tmu-prop-test=PropEENI   --equiv=EquivMem   --starting-as=StartInitial   --gen-strategy=GenByExec2   --smart-ints=True   --shrink-nothing=True   --show-counterexamples=False   --latex-output   --tmu-timeout=300
 
 test-genbyexec4:
-	./TMUDriver   --which-tmm-routine=NoTMMRoutine   --gen-instrs=InstrsCally   --ifc-semantics="[IfcBugArithNoTaint,IfcBugPushNoTaint,IfcBugLoadNoTaint,IfcBugStoreNoValueTaint,IfcBugStoreNoPointerTaint,IfcBugAllowWriteDownThroughHighPtr,IfcBugPopPopsReturns,IfcBugJumpNoRaisePc,IfcBugJumpLowerPc,IfcBugStoreNoPcTaint,IfcBugAllowWriteDownWithHighPc,IfcBugCallNoRaisePc,IfcBugReturnNoTaint,IfcBugValueOrVoidOnReturn]"   --tmu-prop-test=PropEENI   --equiv=EquivMem   --starting-as=StartInitial   --gen-strategy=GenByExec4   --smart-ints=True   --shrink-nothing=True   --show-counterexamples=False   --latex-output   --tmu-timeout=300
+	./Driver   --which-tmm-routine=NoTMMRoutine   --gen-instrs=InstrsCally   --ifc-semantics="[IfcBugArithNoTaint,IfcBugPushNoTaint,IfcBugLoadNoTaint,IfcBugStoreNoValueTaint,IfcBugStoreNoPointerTaint,IfcBugAllowWriteDownThroughHighPtr,IfcBugPopPopsReturns,IfcBugJumpNoRaisePc,IfcBugJumpLowerPc,IfcBugStoreNoPcTaint,IfcBugAllowWriteDownWithHighPc,IfcBugCallNoRaisePc,IfcBugReturnNoTaint,IfcBugValueOrVoidOnReturn]"   --tmu-prop-test=PropEENI   --equiv=EquivMem   --starting-as=StartInitial   --gen-strategy=GenByExec4   --smart-ints=True   --shrink-nothing=True   --show-counterexamples=False   --latex-output   --tmu-timeout=300
 
 test-genbyfwdexec:
-	./TMUDriver   --which-tmm-routine=NoTMMRoutine   --gen-instrs=InstrsCally   --ifc-semantics="[IfcBugArithNoTaint,IfcBugPushNoTaint,IfcBugLoadNoTaint,IfcBugStoreNoValueTaint,IfcBugStoreNoPointerTaint,IfcBugAllowWriteDownThroughHighPtr,IfcBugPopPopsReturns,IfcBugJumpNoRaisePc,IfcBugJumpLowerPc,IfcBugStoreNoPcTaint,IfcBugAllowWriteDownWithHighPc,IfcBugCallNoRaisePc,IfcBugReturnNoTaint,IfcBugValueOrVoidOnReturn]"   --tmu-prop-test=PropEENI   --equiv=EquivMem   --starting-as=StartInitial   --gen-strategy=GenByFwdExec   --smart-ints=True   --shrink-nothing=True   --show-counterexamples=False   --latex-output   --tmu-timeout=300
+	./Driver   --which-tmm-routine=NoTMMRoutine   --gen-instrs=InstrsCally   --ifc-semantics="[IfcBugArithNoTaint,IfcBugPushNoTaint,IfcBugLoadNoTaint,IfcBugStoreNoValueTaint,IfcBugStoreNoPointerTaint,IfcBugAllowWriteDownThroughHighPtr,IfcBugPopPopsReturns,IfcBugJumpNoRaisePc,IfcBugJumpLowerPc,IfcBugStoreNoPcTaint,IfcBugAllowWriteDownWithHighPc,IfcBugCallNoRaisePc,IfcBugReturnNoTaint,IfcBugValueOrVoidOnReturn]"   --tmu-prop-test=PropEENI   --equiv=EquivMem   --starting-as=StartInitial   --gen-strategy=GenByFwdExec   --smart-ints=True   --shrink-nothing=True   --show-counterexamples=False   --latex-output   --tmu-timeout=300
 
 test-genbyexec:
-	./TMUDriver   --which-tmm-routine=NoTMMRoutine   --gen-instrs=InstrsCally   --ifc-semantics="[IfcBugArithNoTaint,IfcBugPushNoTaint,IfcBugLoadNoTaint,IfcBugStoreNoValueTaint,IfcBugStoreNoPointerTaint,IfcBugAllowWriteDownThroughHighPtr,IfcBugPopPopsReturns,IfcBugJumpNoRaisePc,IfcBugJumpLowerPc,IfcBugStoreNoPcTaint,IfcBugAllowWriteDownWithHighPc,IfcBugCallNoRaisePc,IfcBugReturnNoTaint,IfcBugValueOrVoidOnReturn]"   --tmu-prop-test=PropEENI   --equiv=EquivMem   --starting-as=StartInitial   --gen-strategy=GenByExec   --smart-ints=True   --shrink-nothing=True   --show-counterexamples=False   --latex-output   --tmu-timeout=300
+	./Driver   --which-tmm-routine=NoTMMRoutine   --gen-instrs=InstrsCally   --ifc-semantics="[IfcBugArithNoTaint,IfcBugPushNoTaint,IfcBugLoadNoTaint,IfcBugStoreNoValueTaint,IfcBugStoreNoPointerTaint,IfcBugAllowWriteDownThroughHighPtr,IfcBugPopPopsReturns,IfcBugJumpNoRaisePc,IfcBugJumpLowerPc,IfcBugStoreNoPcTaint,IfcBugAllowWriteDownWithHighPc,IfcBugCallNoRaisePc,IfcBugReturnNoTaint,IfcBugValueOrVoidOnReturn]"   --tmu-prop-test=PropEENI   --equiv=EquivMem   --starting-as=StartInitial   --gen-strategy=GenByExec   --smart-ints=True   --shrink-nothing=True   --show-counterexamples=False   --latex-output   --tmu-timeout=300
 
 labelObsBug:
-	./TMUDriver --ifc-semantics="[]" --if-labels-observable=False --gen-strategy=genbyexec2 --show-counterexamples --run-timeout-test=False --tmu-prop-test=propeeni --equiv=equivfull --starting-as=startinitial --which-tmm-routine=notmmroutine --gen-instrs=instrscally --shrink-nothing=False --shrink-noops=True --shrink-to-noop=True --latex-output
+	./Driver --ifc-semantics="[]" --if-labels-observable=False --gen-strategy=genbyexec2 --show-counterexamples --run-timeout-test=False --tmu-prop-test=propeeni --equiv=equivfull --starting-as=startinitial --which-tmm-routine=notmmroutine --gen-instrs=instrscally --shrink-nothing=False --shrink-noops=True --shrink-to-noop=True --latex-output
 
-prof-sequence3: TMUDriver
+prof-sequence3: Driver
 	export FILENAME="../picopaper/prof-Cally-Initial-Sequence-False.tex" ; \
-	./TMUDriver \
+	./Driver \
 	  --which-tmm-routine=NoTMMRoutine \
 	  --gen-instrs=InstrsCally \
 	  --ifc-semantics="[IfcDefault]" \
@@ -487,8 +487,8 @@ prof-sequence3: TMUDriver
 	| tee -a $$FILENAME.tmp; \
 	mv $$FILENAME.tmp $$FILENAME
 
-talk: TMUDriver
-	./TMUDriver \
+talk: Driver
+	./Driver \
 	  $(GENERIC_TMU_OPTIONS) \
 	   --gen-instrs=InstrsBasic \
 	   --ifc-semantics="[$(BUGS)]" \

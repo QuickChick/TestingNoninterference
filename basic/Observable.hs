@@ -1,6 +1,6 @@
 {-# LANGUAGE ImplicitParams, FlexibleContexts #-}
 
-module TMUObservable where
+module Observable where
 
 import Test.QuickCheck.Gen
 import Test.QuickCheck
@@ -8,10 +8,9 @@ import Control.Monad
 import Control.Applicative
 import Data.Function
 
-
 import LaTeX
-import TMULabels
-import TMUFlags
+import Labels
+import Flags
 
 data Variation a = Variation a a
   deriving Eq
@@ -86,15 +85,6 @@ instance (Flaggy DynFlags, Arbitrary a, Observable a) => Observable (Labeled a) 
       HighEquivEverything -> True
 
   vary _ = error "Observable (Labeled a) implements no vary"
-{- dead + wrong(!) code -- it treats if_labels_observable = True (default)
-  as if_labels_observable = False
-  vary (Labeled H _) = 
-    if if_labels_observable getFlags then arbitrary
-    else Labeled H <$> arbitrary
-  vary a               = 
-    if if_labels_observable getFlags then return a else 
-        frequency [(4,return a),(1,Labeled H <$> arbitrary)]
--}
 
   shrinkV (Variation (Labeled L x) (Labeled L x')) | x ~~~ x' =
     map (fmap $ Labeled L) . shrinkV $ Variation x x'
@@ -125,7 +115,7 @@ instance (Flaggy DynFlags, Arbitrary a, Observable a) => Observable (Labeled a) 
           [Variation (Labeled l x) (Labeled l' y') | y' <- shrink y]
         else []
 
-prop_shrinkV :: (Flaggy DynFlags, Observable a, Arbitrary a) => Variation a -> Bool 
+prop_shrinkV :: (Observable a, Arbitrary a) => Variation a -> Bool 
 prop_shrinkV = all (\ (Variation v v') -> v ~~~ v') . shrinkV
 
 instance Observable Int where

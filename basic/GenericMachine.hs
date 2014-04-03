@@ -1,13 +1,8 @@
--- TODO: In general, when generifying things, make sure to restructure
--- the storage allocator example at the same time so that it doesn't
--- bitrot...
-
-
 {-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, RankNTypes #-}
 
 -- Common definitions for generic "machines"
 
-module Machine where
+module GenericMachine where
 
 import Control.Applicative
 import Control.Monad

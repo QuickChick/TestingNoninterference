@@ -1,7 +1,7 @@
 {-# LANGUAGE ImplicitParams, FlexibleContexts, UndecidableInstances,
     RecordWildCards, TupleSections, ScopedTypeVariables, NamedFieldPuns #-}
 
-module TMUDriverUtils where
+module DriverUtils where
 
 import Test.QuickCheck
 import qualified Test.QuickCheck.Property as QCProp
@@ -21,22 +21,22 @@ import GHC.Float
 import Data.IORef
 
 import Util
-import Machine
+import GenericMachine
 import Trace
 import Aggregate
 import Average
 import LaTeX
 
-import TMULabels
-import TMUFlags
-import TMUObservable
-import TMUInstr
+import Labels
+import Flags
+import Observable
+import Instr
 
-import TMUAbstract
-import TMUAbstractGen () -- Import just Arbitrary
-import TMUAbstractObs ()
+import Machine
+import Generation () -- Import just Arbitrary
+import ObservableInst ()
 
-import QuickCheckTimeout (timeout')
+import Timeout (timeout')
 
 
 

@@ -1,15 +1,15 @@
 {-# LANGUAGE ImplicitParams, FlexibleContexts, UndecidableInstances #-}
 
-module TMUInstr where
+module Instr where
 
 import Test.QuickCheck.Gen
 import Test.QuickCheck
 import Control.Monad
 import Control.Applicative
 
-import TMULabels
-import TMUFlags
-import TMUObservable
+import Labels
+import Flags
+import Observable
 
 import LaTeX
 import Util

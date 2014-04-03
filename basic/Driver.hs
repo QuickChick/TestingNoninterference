@@ -1,7 +1,7 @@
 {-# LANGUAGE ImplicitParams, FlexibleContexts, UndecidableInstances,
     RecordWildCards, TupleSections, ScopedTypeVariables, NamedFieldPuns #-}
 
-module TMUDriver where
+module Driver where
 
 import Test.QuickCheck
 
@@ -18,18 +18,16 @@ import Data.Maybe
 
 import Data.IORef
 
-import TMUFlags
-
-
-import TMUAbstract
-import TMUAbstractGen () -- Import just Arbitrary
-import TMUAbstractObs ()
+import Flags
+import Machine
+import Generation () -- Import just Arbitrary
+import ObservableInst ()
 
 import System.Time
 import System.Exit
 
 
-import TMUDriverUtils
+import DriverUtils
 
 
 -- We make the context be an implicit parameter to be

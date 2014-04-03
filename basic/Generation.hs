@@ -1,7 +1,7 @@
 {-# LANGUAGE ImplicitParams, FlexibleContexts, UndecidableInstances,
     RecordWildCards, TupleSections #-}
 
-module TMUAbstractGen where
+module Generation where
 
 import Test.QuickCheck.Gen
 import Test.QuickCheck
@@ -11,13 +11,13 @@ import Data.Maybe
 import Data.List ( find )
 
 import Util
+import GenericMachine
+
+import Labels
+import Flags
+import Instr
+
 import Machine
-
-import TMULabels
-import TMUFlags
-import TMUInstr
-
-import TMUAbstract
 
 import Data.List ( isInfixOf )
 
