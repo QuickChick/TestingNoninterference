@@ -1,4 +1,4 @@
-exec_subdirs = alloc tmu picopaper
+exec_subdirs = basic extended
 util_subdirs = common
 .PHONY : $(exec_subdirs) $(util_subdirs)
 
