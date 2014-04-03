@@ -41,7 +41,7 @@ wfChecks :: [WFCheck] -> WFCheck
 -- Implements the conjuction of all these checks, leftmost first.
 wfChecks [] = WF
 wfChecks ((IF reason):_) = IF reason
-wfChecks (c:cs) = wfChecks cs
+wfChecks (_:cs) = wfChecks cs
 
 class Show s => Machine s where
   isStep :: s -> s -> Bool
@@ -93,7 +93,7 @@ stepUntil' n p s0 s1
 
 stepUntil :: Machine s => Int -> (s -> s -> Bool) -> s -> Gen s
 stepUntil n p s | isWF s = stepUntil' (n - 1) p s =<< step s
-stepUntil n p s = return s
+stepUntil _n _p s = return s
 
 isSteps :: Machine s => [s] -> Bool
 isSteps css =
@@ -105,7 +105,7 @@ stepMany cs =
   else return cs
 
 stepN :: (Machine s, Monad m) => (s -> m (Maybe s)) -> s -> Int -> m [s]
-stepN st s 0 = return [s]
+stepN _st s 0 = return [s]
 stepN st s n = 
   if isWF s then do
     ms <- st s
@@ -146,7 +146,7 @@ class (Machine cs, Machine as) => Layer cs as | as -> cs, cs -> as where
   -- abstractable state, but it doesn't finish an abstract step unless one of
   -- the cores steps into an abstractable state.
   finishedAbstractStep :: cs -> cs -> Bool
-  finishedAbstractStep cs0 cs1 = abstractable cs1
+  finishedAbstractStep _cs0 cs1 = abstractable cs1
 
 stepUntilAbstractable :: Layer cs as => Int -> cs -> Gen (Maybe cs)
 stepUntilAbstractable maxCSteps cs

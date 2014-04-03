@@ -125,7 +125,6 @@ genSequence = do
       maxArgs = conf_max_call_args getFlags
       cally  = callsAllowed (gen_instrs getFlags)
       jumpy  = jumpAllowed  (gen_instrs getFlags)
-      genAll = jumpAllowed  (gen_instrs getFlags)
 
   aimem <- genInstrMem 0 [] aimemSize
   (astk,apcl) <- case starting_as getFlags of
@@ -357,12 +356,12 @@ genByExecVariational lookahead vary
        ; init_as_varied <- vary init_as
        ; let is_varied  = aimem init_as_varied
              mis_varied = zipWith prefer_varied is_varied mis
-       ; (is, mis_final) <- genIS total_is lookahead (init_as_varied, mis_varied)
+       ; (_is, mis_final) <- genIS total_is lookahead (init_as_varied, mis_varied)
        ; let final_is = zipWith prefer_fst mis mis_final
 
        ; return $ init_as { aimem = final_is, apc = init_pc } }
 
-  where prefer_varied i Nothing  = Nothing
+  where prefer_varied _ Nothing  = Nothing
         prefer_varied i (Just _) = Just i
         prefer_fst (Just i) _    = i
         prefer_fst Nothing s     = fromMaybe Noop s
@@ -394,7 +393,7 @@ genIS total_is lookahead (as_init, mis_init)
         --                                  [AData v] -> show (absAdjustAddr (value $ v)) 
         --                                  _ -> "")) $
         return (aimem as, istream)
-      | Just instr <- istream !! iptr
+      | Just _instr <- istream !! iptr
         -- Already generated instruction, just execute
       = -- trace ("Executing: " ++ show instr ++ " (" ++ show iptr ++ ") " ++ show (take 5 (astk as))) $ 
         go (c+1) r (astepFn as) halt_weight istream 
@@ -434,7 +433,7 @@ tryGenerate total_is slack as (ispref, ispost) n halt_weight = go n
                       return (aimem', istream', overwritten) 
               }
         where trystep 0 x = Just x
-              trystep n x | isWF x = trystep (n-1) (astepFn x)
+              trystep m x | isWF x = trystep (m-1) (astepFn x)
                           | IF msg <- wf x, "halt" `isInfixOf` msg = Just x -- DV!
                           | otherwise = Nothing
 
@@ -450,7 +449,7 @@ replaceNoops is mis
     in (overwritten, zipWith merge fis mis)
   where merge Nothing i = i
         merge (Just i) (Nothing) = Just i
-        merge (Just i) (Just j)  = Just j
+        merge (Just _) (Just j)  = Just j
 
 
 
@@ -478,10 +477,10 @@ genByExecBothBranches
                           , amem  = init_mem
                           , aimem = replicate total_is Noop
                           , apc   = init_pc }
-       ; is <- genIS total_is init_as
+       ; is <- genIS' total_is init_as
        ; return $ init_as { aimem = is, apc = init_pc } }
   where
-    genIS total_is as_init
+    genIS' total_is as_init
       = go 0 total_is [] as_init $ replicate total_is Nothing
       where
         go :: Int     -- Since we are executing, use this to avoid looping
@@ -494,7 +493,7 @@ genByExecBothBranches
         go c r jmpTbl as istream
           | r <= 0 || c >= 3 * total_is || not (isWF as)
           = return $ map (fromMaybe Noop) istream
-          | Just instr <- istream !! iptr
+          | Just _instr <- istream !! iptr
           -- Already generated instruction, just execute
           = go (c+1) r jmpTbl (astepFn as) istream
           | otherwise
@@ -537,11 +536,11 @@ genByExecAllBranchesFwd
                           , amem  = init_mem
                           , aimem = replicate total_is Noop
                           , apc   = init_pc }
-       ; is <- genIS total_is init_as
+       ; is <- genIS' total_is init_as
        ; return (-- trace ("Generated is = " ++ show is) $
                  init_as { aimem = is, apc = init_pc }) }
   where
-    genIS total_is as_init
+    genIS' total_is as_init
       = go 0 total_is [] as_init $ replicate total_is Nothing
       where
         go :: Int     -- Since we are executing, use this to avoid looping
@@ -559,7 +558,7 @@ genByExecAllBranchesFwd
           = -- trace ("generating instruction (iptr = " ++ show iptr ++ "):" ++ show instr) $
             if isWF as then 
               let jumpStk n = case astk as !! n of
-                                AData (Labeled l d) -> Just d
+                                AData (Labeled _l d) -> Just d
                                 _                   -> Nothing
                   jump = case instr of
                     Jump     -> jumpStk 0
@@ -610,11 +609,11 @@ genByExecAllBranchesFwd2
                           , amem  = init_mem
                           , aimem = replicate total_is Noop
                           , apc   = init_pc }
-       ; is <- genIS total_is init_as
+       ; is <- genIS' total_is init_as
        ; return (-- trace ("Generated is = " ++ show is) $
                  init_as { aimem = is, apc = init_pc }) }
   where
-    genIS total_is as_init
+    genIS' total_is as_init
       = go 0 False total_is [] as_init $ replicate total_is Nothing
       where
         go :: Int     -- Since we are executing, use this to avoid looping
@@ -635,7 +634,7 @@ genByExecAllBranchesFwd2
             in
             if isWF as then 
               let jumpStk n = case astk as !! n of
-                                AData (Labeled l d) -> Just d
+                                AData (Labeled _l d) -> Just d
                                 _                   -> Nothing
                   jump = case instr of
                     Jump     -> jumpStk 0
@@ -691,11 +690,11 @@ genByExecAllBranchesFwd3
                           , amem  = init_mem
                           , aimem = replicate total_is Noop
                           , apc   = init_pc }
-       ; is <- genIS total_is init_as
+       ; is <- genIS' total_is init_as
        ; return (-- trace ("Generated is = " ++ show is) $
                  init_as { aimem = is, apc = init_pc }) }
   where
-    genIS total_is as_init
+    genIS' total_is as_init
       = go (Execute 0) False [] as_init
       where
         go :: Execute
@@ -708,7 +707,7 @@ genByExecAllBranchesFwd3
           = return $ aimem as
           | Execute n <- execute
           , n > 0
-          , instr <- aimem as !! iptr
+          , _instr <- aimem as !! iptr
           = -- trace "foo" $
             if as_better /= as then go (Execute 0) tainted jmpTbl as
             else
@@ -808,13 +807,14 @@ genByFwdExec
       -- The tbl maps pc's to states stored when encountering forward jumps.
       -- The tainted flag records if the current state is accurate. Important:
       -- ignore forward jumps in tainted states.
-      genIs' _ _ _ 0 as _ halting_weight = return $ aimem as
+      genIs' _ _ _ 0 as _ _halting_weight = return $ aimem as
       genIs' tainted tbl n m as0 is halting_weight = do
         let pc = 0 + length (aimem as0)
             stored = lookup pc tbl
             fromFwdJump = isJust stored && tainted
             as | not tainted = as0
                | otherwise   = (fromMaybe as0 stored) { aimem = aimem as0 }
+        -- CH: all variables names "is" here?
         (i, is) <- case is of
           i:is | not fromFwdJump
                  -> return (i,is) 
@@ -833,7 +833,7 @@ genByFwdExec
         as'' <- if isWF as' then step as' else return as'
         
         let jumpStk n = case astk as !! n of
-                          AData (Labeled l d) -> Just d
+                          AData (Labeled _l d) -> Just d
                           _                   -> Nothing
             jump = case i of
                      Jump     -> jumpStk 0
@@ -915,8 +915,6 @@ ainstr imem_size slack as@(AS{amem=mem, astk=stk}) halt_weight =
     
     nstk    = length $ takeWhile isAData stk
     vtop    = astkValue $ head stk
-    vsnd    = astkValue $ stk !! 1
---    lint    = labeled int
     maxArgs = conf_max_call_args getFlags
     cally   = callsAllowed (gen_instrs getFlags)
     jumpy   = jumpAllowed  (gen_instrs getFlags)
@@ -987,7 +985,6 @@ ainstrs imem_size slack as@(AS{amem = mem, astk = stk}) halt_weight =
     maxArgs = conf_max_call_args getFlags
     cally  = callsAllowed (gen_instrs getFlags)
     jumpy  = jumpAllowed  (gen_instrs getFlags)
-    genAll = jumpAllowed  (gen_instrs getFlags)
 
 -- instance Flaggy DynFlags => Arbitrary AS where
 --   arbitrary = genAS
@@ -1041,7 +1038,7 @@ genTinySSNI
         varyInstr (Push a)   = Push <$> varyAtom a
         varyInstr (Return _) = Return <$> arbitrary
         varyInstr i          = pure i
-        varyInt i = oneof [genDataPtr, int]
+        varyInt _i = oneof [genDataPtr, int]
         varyAtom (Labeled H i) = Labeled H <$> varyInt i
         varyAtom a             = pure a
 
@@ -1054,7 +1051,7 @@ genTinySSNI
 ainstr' :: Flaggy DynFlags
        => AS
        -> Gen Instr
-ainstr' as@(AS{amem=mem, astk=stk}) =
+ainstr' _as@(AS{amem=mem, astk=stk}) =
   frequency $
     [ (1, pure Noop) ] ++
     [ (1, pure Halt) ] ++
@@ -1079,7 +1076,6 @@ ainstr' as@(AS{amem=mem, astk=stk}) =
   where
     nstk    = length $ takeWhile isAData stk
     vtop    = astkValue $ head stk
-    vsnd    = astkValue $ stk !! 1
     lint    = labeled int
     maxArgs = conf_max_call_args getFlags
     cally   = callsAllowed (gen_instrs getFlags)

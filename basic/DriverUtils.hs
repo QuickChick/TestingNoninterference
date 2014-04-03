@@ -11,7 +11,7 @@ import Control.Monad
 import Control.Applicative
 import Control.Arrow()
 import Data.Function
-import Data.List (sortBy, groupBy, nub, isInfixOf, intercalate)
+import Data.List (sortBy, groupBy, isInfixOf, intercalate)
 
 import Text.Printf
 import System.CPUTime
@@ -87,18 +87,19 @@ gen_prop_noninterference observe compare
 --   shrinking shrinkNothing (steps,steps) step_prop -- step_prop (steps,steps) 
  
  where steps = step_no getFlags
-        
-       iptr_coverage as ass =
-           -- How many distinct PCs are execute from the generated
-           -- instruction stream
-           fromIntegral (100 * length (nub (map (value . apc) ass))) /
-                                       fromIntegral (length (aimem as))
-       noops_executed =
-           foldr (\x s -> if isWF x then
-                            case aimem x !! value (apc x) of
-                              Noop -> s + 1
-                              _    -> s
-                          else s) 0
+       
+       -- iptr_coverage as ass =
+       --     -- How many distinct PCs are execute from the generated
+       --     -- instruction stream
+       --     fromIntegral (100 * length (nub (map (value . apc) ass))) /
+       --                                 fromIntegral (length (aimem as))
+
+       -- noops_executed =
+       --     foldr (\x s -> if isWF x then
+       --                      case aimem x !! value (apc x) of
+       --                        Noop -> s + 1
+       --                        _    -> s
+       --                    else s) 0
 
 printPlain :: Flaggy DynFlags => AS -> AS -> [AS] -> [AS] -> IO ()
 printPlain as as' ass ass' = do
@@ -249,14 +250,14 @@ prop_end_to_end_aux break =
    where observe ass | is_halting last_as = (ass, Just last_as)
                      | otherwise          = (ass, Nothing)
            where last_as = last ass
-                 is_halting as@AS{..} 
+                 is_halting _as@AS{..} 
                    | let iptr = value apc
                    , iptr `isIndex` aimem
                    , Halt <- aimem !! iptr
                    = break || (lab apc == L)
                    | otherwise
                    = False
-         compare (ass1,m1) (ass2,m2)
+         compare (_ass1,m1) (_ass2,m2)
            = -- collect (any ((== H) . lab . apc) ass1,
              --          any ((== H) . lab . apc) ass2) $
              -- collect (wf (last ass1), wf (last ass2)) $
@@ -285,7 +286,7 @@ prop_single_step (Smart _ (Shrink2 (Variation as1 as2))) =
   forAll (liftA2 (,) (step' as1) (step' as2)) $ \(mas1',mas2') ->
 --   collect (length $ filter (not . isAData) $ astk as1) $
 --   collect (head $ words $ show $ head (aimem as1)) $
-    let collect s = id in
+    let collect _s = id in
     whenFail (when (show_counterexamples getFlags) $
               (if latex_output getFlags then printLaTeX else printPlain)
                 as1 as2 (as1 : maybeToList mas1')
@@ -307,7 +308,7 @@ prop_single_step (Smart _ (Shrink2 (Variation as1 as2))) =
              Nothing   -> abandon
   where xs ? i | 0 <= i && i < length xs = Just $ xs !! i
                | otherwise               = Nothing
-        successful as@AS{..} = (aimem ? value apc) == Just Halt
+        successful _as@AS{..} = (aimem ? value apc) == Just Halt
         step' as | isWF as   = Just <$> step as
                  | otherwise = pure Nothing
         abandon = False ==> True
@@ -343,8 +344,8 @@ profileTests
                  ; putStrLn "\\begin{tabular}{rl}"
                  ; putStrLn $ "\\multicolumn{2}{l}{Average number of execution steps: "
                             ++ astr ++ "}\\\\\\midrule"
-                 ; let ls = filter (\(l,n)->n>0) $
-                            sortBy (\(l,n) (l',n') -> compare n' n) (labels r)
+                 ; let ls = filter (\(_l,n)->n>0) $
+                            sortBy (\(_l,n) (_l',n') -> compare n' n) (labels r)
                  ; mapM_ (\(l,n) -> printf "%d\\%% & %s \\\\\n" n (read l :: String)) ls 
                  ; putStrLn "\\end{tabular}"
                  ; putStrLn "\\fi%"
@@ -354,13 +355,13 @@ profileTests
 
        }
   where
-    show_wf as ass = show_wf_nicely (wf (last ass))
+    show_wf _as ass = show_wf_nicely (wf (last ass))
     show_wf_nicely WF = "well-formed"
     show_wf_nicely (IF excuse) = excuse
 
 
 isHaltingAS :: Flaggy DynFlags => AS -> Bool
-isHaltingAS as@AS{..}
+isHaltingAS _as@AS{..}
   | let iptr = value apc
   , iptr `isIndex` aimem
   , Halt <- aimem !! iptr
@@ -394,11 +395,11 @@ profileVariations
     where
       print_nicely r
         = do { (a1,a2) <- average2
-             ; (b1,b2) <- average2' 
+             -- ; (b1,b2) <- average2' 
              ; let astr1 = formatRealFloat FFFixed (Just 2) (a1-1)
              ; let astr2 = formatRealFloat FFFixed (Just 2) (a2-1)
-             ; let bstr1 = formatRealFloat FFFixed (Just 2) (b1-1)
-             ; let bstr2 = formatRealFloat FFFixed (Just 2) (b2-1)
+             -- ; let bstr1 = formatRealFloat FFFixed (Just 2) (b1-1)
+             -- ; let bstr2 = formatRealFloat FFFixed (Just 2) (b2-1)
              ; putStrLn "\\ifonlylen%"
              ; putStrLn (astr1 ++ "%")
              ; putStrLn "\\else%"
@@ -409,8 +410,8 @@ profileVariations
              -- ; putStrLn $ " Avg. exec. steps (low-halt) & " ++
              --                  bstr1 ++ " & " ++ bstr2 ++ "\\\\"
                               
-             ; let ls = filter (\(l,n) -> n > 0) $
-                        sortBy (\(l,n) (l',n') -> compare n' n) (labels r)
+             ; let ls = filter (\(_l,n) -> n > 0) $
+                        sortBy (\(_l,n) (_l',n') -> compare n' n) (labels r)
              ; mapM_ (\(l,n) ->
                          let (l1::String,l2::String) = read l
                          in printf "%d\\%% & %s & %s \\\\\n" n l1 l2) ls
@@ -428,7 +429,7 @@ profileVariations
                         show_wf_nicely $ wf (last ass2)) $
             record2 (length ass1, length ass2) $ -- Record steps
             compare' (length ass1) (length ass2) m1 m2
-      compare' l1 l2 (Just as1) (Just as2)
+      compare' l1 l2 (Just _as1) (Just _as2)
         = record2' (l1,l2) True -- Record low-halting steps
       compare' _ _ _ _ = True
   
@@ -486,7 +487,7 @@ checkProperty discard_ref pr microsecs
                   Just (Success {})    -> putStrLn "Success"
                   Just (GaveUp {})     -> putStrLn "Gave up"
                   Just (NoExpectedFailure {}) -> putStrLn "No expected failure"
-                  Just (Failure { reason = r }) | "timeout" `isInfixOf` r -> 
+                  Just (Failure { reason = res }) | "timeout" `isInfixOf` res -> 
                        putStrLn "Timeout (caught by QC)" 
                   Just (Failure { numTests = nt, numShrinks = ns })
                       -> do when is_latex $ putStr "% "
@@ -496,8 +497,8 @@ checkProperty discard_ref pr microsecs
          ; real_tests_run <- readIORef tests_run
          ; let res = case r of
                  Nothing -> Left real_tests_run -- if the exception propagated up
-                 Just (Failure { reason = r})
-                   | "timeout" `isInfixOf` r -> Left real_tests_run -- if the exception caught by QC 
+                 Just (Failure { reason = res})
+                   | "timeout" `isInfixOf` res -> Left real_tests_run -- if the exception caught by QC 
                  Just r  -> Right r
          ; return (res, diff)
          }

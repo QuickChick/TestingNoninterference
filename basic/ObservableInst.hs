@@ -100,7 +100,7 @@ instance Flaggy DynFlags => Observable AS where
 
           is_not_basic = gen_instrs getFlags /= InstrsBasic
   
-          varyAtom a@(Labeled H i) =
+          varyAtom _a@(Labeled H i) =
             case atom_equiv getFlags of
               LabelsObservable -> Labeled H <$> varyInt i
               LabelsNotObservable ->
@@ -225,7 +225,7 @@ shrink2noops aimem aimem' | length noops >= 2 =
   where noops = [i | (instr,i) <- zip aimem [0..], instr/=Noop]
         replace i j aimem = [if k==i || k==j then Noop else instr
                             | (instr,k) <- zip aimem [0..]]
-shrink2noops aimem aimem' = []
+shrink2noops _aimem _aimem' = []
 
 {-                        
                      (if lab (apc as) == L

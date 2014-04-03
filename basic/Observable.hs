@@ -121,12 +121,12 @@ prop_shrinkV = all (\ (Variation v v') -> v ~~~ v') . shrinkV
 instance Observable Int where
   (~~~)                 = (==)
   vary = return
-  shrinkV (Variation i i') = [Variation j j | j <- shrink i]
+  shrinkV (Variation i _i') = [Variation j j | j <- shrink i]
 
 instance Observable Bool where
   (~~~) = (==)
   vary = return
-  shrinkV (Variation i i') = [Variation j j | j <- shrink i]
+  shrinkV (Variation i _i') = [Variation j j | j <- shrink i]
 
 instance (Show a, Observable a) => Observable (Maybe a) where
   Just x  ~~~ Just y  = x ~~~ y

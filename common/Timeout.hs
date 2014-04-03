@@ -15,7 +15,7 @@ data MyTimeout = MyTimeout Int
   deriving (Eq, Typeable)
 
 instance Show MyTimeout where
-  show tm = "internal timeout"
+  show _ = "internal timeout"
 
 instance E.Exception MyTimeout
 

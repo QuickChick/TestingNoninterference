@@ -150,12 +150,7 @@ main = do { flags <- cmdArgs dynFlagsDflt
                  _          -> False
           
           | otherwise 
-          = let bugs_per_sec c =
-                  let (s::String) = printf "%0.3f" ( fromIntegral (bugs_c c)
-                                                   / fromIntegral (timeout f) :: Double)
-                  in s ++ extrap_info (extrapolated c)
-                     
-                -- Compute MTTF in ms
+          = let -- Compute MTTF in ms
                 mean_time_to_failure_stats :: TestCounters -> (Maybe Rational, Maybe Rational)
                 mean_time_to_failure_stats c
                   | null $ times_c c = (Nothing, Nothing)
@@ -171,9 +166,6 @@ main = do { flags <- cmdArgs dynFlagsDflt
                 extrap_info (Left ()) = " (A)"
                 extrap_info (Right (_r,_b,_d)) = " (E)"
                      -- = printf " (E, b = %d, r=%d, d=%d)" b r d
-
-                show_gtz 0 = "0"  -- change to "" if you want to suppress 0
-                show_gtz i = show i
             in
             do { counters <- action (f{ifc_semantics_singleton = [b]})
                ; let gen_speed :: Double = 

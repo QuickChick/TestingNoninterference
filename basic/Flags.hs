@@ -115,13 +115,6 @@ data IfcSemantics
   | IfcBugJumpLowerPc
       -- jumping to a low address lowers the pc
   
-  | IfcBugJumpNZNoRaisePcTaken
-      -- conditional jumps with high condition or address don't
-      -- raise pc when jumping occurs
-  | IfcBugJumpNZNoRaisePcNotTaken
-      -- conditional jumps with high condition don't raise pc
-      -- when no jumping occurs 
-  
   | IfcBugCallNoRaisePc
       -- calling a high address does not raise the pc
   | IfcBugReturnNoTaint
@@ -165,8 +158,6 @@ allIfcBugs
     , IfcBugCallNoRaisePc
     , IfcBugReturnNoTaint
     , IfcBugValueOrVoidOnReturn
-    , IfcBugJumpNZNoRaisePcTaken
-    , IfcBugJumpNZNoRaisePcNotTaken
     ]
 
 readIfcSemanticsList :: DynFlags -> [IfcSemantics]

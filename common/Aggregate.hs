@@ -20,6 +20,6 @@ aggregateResults = do
   if null xs then return () else
     quickCheckWith stdArgs{maxSuccess = length xs} $
       ioProperty $ do
-        x:xs <- readIORef aggrRef
-        writeIORef aggrRef xs
-        return $ collect (MkStr x) True
+        y:ys <- readIORef aggrRef
+        writeIORef aggrRef ys
+        return $ collect (MkStr y) True

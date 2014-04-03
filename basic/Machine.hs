@@ -214,10 +214,10 @@ instrChecks is AS{..} = instr_checks is
         ]
     instr_checks Jump
       = [ stackSize 1 ]
-    instr_checks (Call a r)
+    instr_checks (Call a _r)
       = [ stackSize (a+1) ]
     instr_checks (Return b)
-      | Just (ARet (Labeled _ (pc,r))) <- find (not . isAData) astk
+      | Just (ARet (Labeled _ (_pc,r))) <- find (not . isAData) astk
       = [ stackSize (if not bugValueOrVoidOnReturn
                      then (if r then 1 else 0) 
                      else (if b then 1 else 0))]
@@ -230,11 +230,9 @@ instrChecks is AS{..} = instr_checks is
 
     if_not_basic s = if gen_instrs getFlags /= InstrsBasic then s else ""
 
-    iptr  = value apc
-    instr = aimem !! iptr
     stk   = takeWhile isAData astk
     stackSize n = length stk >= n `orElse` "stack underflow"
-    ~(addr : ~(val:_)) = stk
+    ~(addr : ~(val:_)) = stk -- CH: can't understand this syntax, val not used anywhere
     mptr  = astkValue addr
     variantDisallowStoreThroughHighPtr
       = IfcVariantDisallowStoreThroughHighPtr `elem` ifcsem
@@ -346,10 +344,6 @@ astepInstr as@AS{..} is =
       = IfcBugJumpNoRaisePc `elem` ifcsem
     bugJumpLowerPc
       = IfcBugJumpLowerPc `elem` ifcsem
-    bugJumpNZNoRaisePcTaken
-      = IfcBugJumpNZNoRaisePcTaken `elem` ifcsem
-    bugJumpNZNoRaisePcNotTaken
-      = IfcBugJumpNZNoRaisePcNotTaken `elem` ifcsem
     bugReturnNoTaint
       = IfcBugReturnNoTaint `elem` ifcsem
     bugCallNoRaisePc
@@ -361,9 +355,6 @@ astepInstr as@AS{..} is =
 
     ifcsem :: Flaggy DynFlags => [IfcSemantics] 
     ifcsem = readIfcSemantics getFlags
-
-    labToInt L = 0
-    labToInt H = 1
 
 astepFn :: Flaggy DynFlags => AS -> AS
 astepFn as@AS{..} =
@@ -387,9 +378,9 @@ prop_stackheight as =
   shrinking shrink (500::Int) $ \n ->
     forAll (traceN as n) $ \(Trace ass) ->
         let pc_lists = groupBy ((==) `on` apc) ass in
-        let sh_are_equal ass = and (zipWith ((==) `on` length . astk) 
-                                             ass 
-                                             (drop 1 ass)) in
+        let sh_are_equal ass' = and (zipWith ((==) `on` length . astk) 
+                                             ass'
+                                             (drop 1 ass')) in
         -- assumption: only considering changes of height size that do
         -- not block the semantics
         all isWF ass  ==>
