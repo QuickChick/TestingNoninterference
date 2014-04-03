@@ -63,4 +63,3 @@ instance Num a => Num (Labeled a) where
   abs (Labeled l m) = Labeled l (abs m)
   signum (Labeled l m) = Labeled l (signum m)
   fromInteger n = Labeled L (fromInteger n)
-

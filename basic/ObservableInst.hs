@@ -91,9 +91,9 @@ instance Flaggy DynFlags => Observable AS where
           varyInt i
             | smart_ints getFlags
             = frequency $ [ (10, length (amem as) `upfrom` 0)
-                          | absAdjustAddr i `isIndex` amem as ]
+                          | i `isIndex` amem as ]
                        ++ [ (10, length (aimem as) `upfrom` 0)
-                          | absAdjustIAddr i `isIndex` aimem as && is_not_basic ]
+                          | i `isIndex` aimem as && is_not_basic ]
                        ++ [ (1, int) ]
             | otherwise
             = int

@@ -149,23 +149,6 @@ instance Flaggy DynFlags => Arbitrary AStkElt where
   shrink (AData i) = map AData $ shrink i
   shrink (ARet p) = AData (fmap fst p) : map ARet (shrink p) 
 
--- All addresses in the abstract machine, both for memory and instructions,
--- start at an offset; we fill the addresses before that offset with TMU
--- information in the concrete machine.
---
--- TODO It's worth thinking about if there's a way to use types to distinguish
--- abstract from concrete addresses; I lost some time to tracing down forgotten
--- uses of absAdjust[I]Addr, and it would be nice if the compiler
--- could tell me.
--- TODO Phantom types should be good for this! [BCP]
--- TODO: CH: get rid of this crap
-absAdjustAddr :: Flaggy DynFlags => Int -> Int
-absAdjustAddr  ma = ma
-
--- TODO: CH: get rid of this crap
-absAdjustIAddr :: Flaggy DynFlags => Int -> Int
-absAdjustIAddr ia = ia
-
 -- TODO (a bit later): refine the machine so that the call stack is
 -- separate from the data stack and the return instruction (which will
 -- now be a separate thing from JUMP) lowers the PC tag.
@@ -200,7 +183,7 @@ wf_impl as = wfChecks checks
                   aimem as `orElse` "pc out of range"
 
     iptr :: Flaggy DynFlags => Int
-    iptr  = absAdjustIAddr (value $ apc as)
+    iptr  = value $ apc as
     instr :: Flaggy DynFlags => Instr
     instr = aimem as !! iptr
 
@@ -247,12 +230,12 @@ instrChecks is AS{..} = instr_checks is
 
     if_not_basic s = if gen_instrs getFlags /= InstrsBasic then s else ""
 
-    iptr  = absAdjustIAddr (value apc)
+    iptr  = value apc
     instr = aimem !! iptr
     stk   = takeWhile isAData astk
     stackSize n = length stk >= n `orElse` "stack underflow"
     ~(addr : ~(val:_)) = stk
-    mptr  = absAdjustAddr (astkValue addr)
+    mptr  = astkValue addr
     variantDisallowStoreThroughHighPtr
       = IfcVariantDisallowStoreThroughHighPtr `elem` ifcsem
     bugPopPopsReturns
@@ -293,7 +276,7 @@ astepInstr as@AS{..} is =
       in as { astk = AData ((if not bugLoadNoTaint
                                then (astkData a `tainting`)
                                else id)
-                            (amem !! absAdjustAddr (astkValue a))) : astk'
+                            (amem !! astkValue a)) : astk'
             , apc = apc + 1 }
     Store ->
       let a:b:astk' = astk
@@ -304,7 +287,7 @@ astepInstr as@AS{..} is =
             | bugStoreNoPcTaint = astkData a `tainting` (astkData b)
             | otherwise = apc `tainting` astkData a `tainting` (astkData b)
 
-          oldContents = amem !! absAdjustAddr (astkValue a)
+          oldContents = amem !! astkValue a
           newContents = if variantWriteDownAsNoop
                         -- DD: don't get this one -- could this sanity
                         -- check be turned into a a single "meta-flag"
@@ -314,7 +297,7 @@ astepInstr as@AS{..} is =
                                    <= lab oldContents)
                           then oldContents
                           else tainted
-      in as{ amem = update (absAdjustAddr $ astkValue a) newContents amem
+      in as{ amem = update (astkValue a) newContents amem
            , astk = astk', apc = apc + 1 }
     Jump ->
       let p:astk' = astk in
@@ -384,7 +367,7 @@ astepInstr as@AS{..} is =
 
 astepFn :: Flaggy DynFlags => AS -> AS
 astepFn as@AS{..} =
-  astepInstr as (aimem !! absAdjustIAddr (value apc))
+  astepInstr as (aimem !! value apc)
   
 
 {----- Properties on the abstract semantics -----}

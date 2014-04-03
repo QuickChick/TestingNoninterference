@@ -8,13 +8,13 @@ clean : $(exec_subdirs:=-clean) $(util_subdirs:=-clean)
 
 rebuild:
 	svn up
-	$(MAKE) -C tmu picotables-parallel
+	$(MAKE) -C basic picotables-parallel
 	svn up
 	svn commit -m "Picotables rebuilt"
 
 rebuild-slow:
 	svn up
-	$(MAKE) -C tmu picotables-slow
+	$(MAKE) -C basic picotables-slow
 	svn up
 	svn commit -m "Picotables rebuilt (on just one core, 1000s)"
 

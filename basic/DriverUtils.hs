@@ -95,7 +95,7 @@ gen_prop_noninterference observe compare
                                        fromIntegral (length (aimem as))
        noops_executed ass =
            foldr (\x s -> if isWF x then
-                            case aimem x !! absAdjustIAddr (value $ apc x) of
+                            case aimem x !! (value $ apc x) of
                               Noop -> s + 1
                               _    -> s
                           else s) 0 ass
@@ -121,7 +121,7 @@ printPlain as as' ass ass' = do
                 putStr "\tS="
                 putStr (show (zipWith Variation (astk as) (astk as')))
                 putStr "\tnext="
-                let len = absAdjustIAddr (value $ apc as) 
+                let len = value $ apc as
                 if isIndex len (aimem as) &&
                    isIndex len (aimem as') then print (Variation (aimem as !! len)
                                                                  (aimem as' !! len))
@@ -135,7 +135,7 @@ printPlain as as' ass ass' = do
                 putStr "\tS="
                 putStr (show (astk as))
                 putStr "\tnext="
-                let len = absAdjustIAddr (value $ apc as) 
+                let len = value $ apc as
                 if isIndex len (aimem as) then print (aimem as !! len)
                                           else putStrLn "<eof>"
 
@@ -175,7 +175,7 @@ printLaTeX as as' ass ass' = do
     putTableRow (apc as)
                 ((zipWith Variation `on` amem) as as')
                 ((zipWith Variation `on` astk) as as')
-                $ let pc     = absAdjustIAddr . value $ apc as
+                $ let pc     = value $ apc as
                       instr  = aimem as  !! pc
                       instr' = aimem as' !! pc
                   in case (isIndex pc $ aimem as, isIndex pc $ aimem as') of
@@ -192,7 +192,7 @@ printLaTeX as as' ass ass' = do
                  ++ name ++ " continues\\ldots} \\\\"
         forM_ mach $ \as ->
           putTableRow (apc as) (amem as) (astk as) $
-                      let pc = absAdjustIAddr . value $ apc as
+                      let pc = value $ apc as
                       in if isIndex pc $ aimem as
                            then toLaTeX $ aimem as !! pc
                            else "\\mathord{-}"
@@ -232,7 +232,7 @@ prop_low_lockstep =
                     error "prop_low_lockstep: There must be at least one AS!"
               in get ass
     
-    isHalted AS{..} = let iptr = absAdjustIAddr $ value apc
+    isHalted AS{..} = let iptr = value apc
                       in iptr `isIndex` aimem && aimem !! iptr == Halt
     
     ([],Just as1) ~=~ ([],Just as2) = as1 ~~~ as2
@@ -250,7 +250,7 @@ prop_end_to_end_aux break =
                      | otherwise          = (ass, Nothing)
            where last_as = last ass
                  is_halting as@AS{..} 
-                   | let iptr = absAdjustIAddr (value apc)
+                   | let iptr = value apc
                    , iptr `isIndex` aimem
                    , Halt <- aimem !! iptr
                    = if break then True else lab apc == L
@@ -361,7 +361,7 @@ profileTests
 
 isHaltingAS :: Flaggy DynFlags => AS -> Bool
 isHaltingAS as@AS{..}
-  | let iptr = absAdjustIAddr (value apc)
+  | let iptr = value apc
   , iptr `isIndex` aimem
   , Halt <- aimem !! iptr
   , L <- lab apc

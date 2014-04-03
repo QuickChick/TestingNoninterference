@@ -406,7 +406,7 @@ genIS total_is lookahead (as_init, mis_init)
                <- tryGenerate total_is slack as (ispref, ispost) lookahead halt_weight
            ; go (c+1) (r - overwritten) (as {aimem = aimem'}) (halt_weight+1) istream' }
     
-      where iptr = absAdjustIAddr $ value (apc as)
+      where iptr = value (apc as)
 
 
 tryGenerate :: Flaggy DynFlags
@@ -513,7 +513,7 @@ genByExecBothBranches
                      aimem'                = map (fromMaybe Noop) istream'
                  -- And try again. Same pc, only update the instruction stream.
                ; go (c+1) (r - overwritten) jmpTbl (as' {aimem = aimem'}) istream' }
-          where iptr = absAdjustIAddr $ value (apc as)
+          where iptr = value (apc as)
 
 
 {--------------------------------------------------------------------------
@@ -599,7 +599,7 @@ genByExecAllBranchesFwd
                      aimem'                = map (fromMaybe Noop) istream'
                  -- And try again. Same pc, only update the instruction stream.
                ; go (_c+1) (r - overwritten) jmpTbl (as' {aimem = aimem'}) istream' }
-          where iptr = absAdjustIAddr $ value (apc as)
+          where iptr = value (apc as)
 
 
 genByExecAllBranchesFwd2 :: Flaggy DynFlags => Gen AS
@@ -678,7 +678,7 @@ genByExecAllBranchesFwd2
                  -- And try again. Same pc, only update the instruction stream.
                ; let tainted' = tainted || isJust (lookup (value $ apc as) jmpTbl)
                ; go (_c+1) tainted' (r - overwritten) jmpTbl (as' {aimem = aimem'}) istream' }
-          where iptr = absAdjustIAddr $ value (apc as)
+          where iptr = value (apc as)
 
 
 data Execute = Execute Int
@@ -742,7 +742,7 @@ genByExecAllBranchesFwd3
                      
                ; go (Execute (length is_to_use)) tainted' jmpTbl $
                  as_better {aimem = istream'} }
-          where iptr = absAdjustIAddr $ value (apc as)
+          where iptr = value (apc as)
 
                 as_better
                   -- If we are tainted and there is a stored one, it's more accurate so use it
@@ -872,12 +872,12 @@ ainstr imem_size slack as@(AS{amem=mem, astk=stk}) halt_weight =
     [ (1,  pure Noop) ] ++
     [ (5 + halt_extra_weight,  pure Halt) ] ++
     [ (40, pure Jump) | nstk >= 1
-                      , let vt' = absAdjustIAddr vtop
+                      , let vt' = vtop
                       , vt' >= 0 && vt' < imem_size
                       , jumpy ] ++
     [ (40, liftM2 Call (choose (0, (nstk-1) `min` maxArgs)) arbitrary)
                          | nstk >= 1
-                         , let vt' = absAdjustIAddr vtop
+                         , let vt' = vtop
                          , vt' >= 0 && vt' < imem_size
                          , cally ] ++
     -- If we're generating the last instruction, don't bother
@@ -891,11 +891,11 @@ ainstr imem_size slack as@(AS{amem=mem, astk=stk}) halt_weight =
         then length stk >= 1
         else nstk >= 1 ] ++
     [ (60, pure Store) | nstk >= 2
-                       , absAdjustAddr vtop `isIndex` mem
+                       , vtop `isIndex` mem
                        , extra_label_checks
                        ] ++
     [ (60, pure Load) | nstk >= 1
-                      , absAdjustAddr vtop `isIndex` mem ] ++
+                      , vtop `isIndex` mem ] ++
     [ (40, liftM Return arbitrary) | Just r <- [ fmap astkReturns $
                                                  find (not . isAData) stk]
                                    , nstk >= if r then 1 else 0 
@@ -1065,9 +1065,9 @@ ainstr' as@(AS{amem=mem, astk=stk}) =
                          then length stk >= 1
                          else nstk >= 1 ] ++
     [ (20, pure Store) | nstk >= 2
-                       , absAdjustAddr vtop `isIndex` mem ] ++
+                       , vtop `isIndex` mem ] ++
     [ (20, pure Load) | nstk >= 1
-                      , absAdjustAddr vtop `isIndex` mem ] ++
+                      , vtop `isIndex` mem ] ++
     [ (10, liftM2 Call (choose (0, (nstk-1) `min` maxArgs)) arbitrary)
                          | nstk >= 1
                          , cally ] ++
