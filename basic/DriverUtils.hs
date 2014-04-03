@@ -100,12 +100,6 @@ gen_prop_noninterference observe compare
                               _    -> s
                           else s) 0 ass
 
-       jumpNZtaken ass =
-          [ astkValue (head (astk s)) /= 0
-          | s <- ass,
-            isWF s,
-            aimem s !! absAdjustIAddr (value $ apc s) == JumpNZ]
-
 printPlain :: Flaggy DynFlags => AS -> AS -> [AS] -> [AS] -> IO ()
 printPlain as as' ass ass' = do
   print (zipWith Variation (aimem as) (aimem as'))

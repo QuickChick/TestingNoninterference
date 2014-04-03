@@ -35,8 +35,6 @@ data Instr =
   -- Pure stack instructions --
   | Add
     -- Stack:  a b _ -> (a+b) _
-  | Sub
-    -- Stack:  a b _ -> (a-b) _
   | Push Atom -- a :: Atom
     -- Stack:  _ -> a _
   | Pop
@@ -53,9 +51,6 @@ data Instr =
   | Jump
     -- Stack:  iaddr _ -> _
     -- PC:     pc := iaddr
-  | JumpNZ
-    -- Stack:  a iaddr _ -> _
-    -- PC:     pc := if a /= 0 then iaddr else pc + 1
   
   -- Function calls --
   | Call Int Bool -- number of args (A) and whether the function returns a value (R)
@@ -69,8 +64,6 @@ data Instr =
   -- Halting
   | Halt
   
-  -- Label introspection (bug for this machine)
-  | LabelOf
   deriving (Show, Eq, Read)
 
 instance LaTeX Instr where
@@ -119,7 +112,6 @@ instance Flaggy DynFlags => Arbitrary Instr where
     Noop :      -- Easiest way to shrink an instruction is replacing it with a Noop.
     case i of   -- Otherwise...
       Push x   -> map Push $ shrink x    
-      JumpNZ   -> [Jump]
       Call a r -> Jump : map (uncurry Call) (shrink (a,r))
       Return True -> [Return False]
       _        -> []
@@ -139,7 +131,6 @@ instance Flaggy DynFlags => Observable Instr where
     (if shrink_to_noop getFlags then (Variation Noop Noop :) else id) $
     case (i,i') of 
       (Push a,   Push a')    -> map (fmap Push) $ shrinkV (Variation a a')
-      (JumpNZ,   JumpNZ)     -> [Variation Jump Jump]
       (Call a r, Call a' r') -> 
          Variation Jump Jump :
          map (fmap (uncurry Call)) (shrinkV (Variation (a,r) (a',r')))

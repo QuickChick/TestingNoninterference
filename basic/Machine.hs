@@ -210,7 +210,6 @@ instrChecks is AS{..} = instr_checks is
   where
     instr_checks Noop     = [WF]
     instr_checks Add      = [stackSize 2] 
-    instr_checks Sub      = [stackSize 2]
     instr_checks (Push _) = [WF]
     instr_checks Pop      =
       [ if bugPopPopsReturns
@@ -232,8 +231,6 @@ instrChecks is AS{..} = instr_checks is
         ]
     instr_checks Jump
       = [ stackSize 1 ]
-    instr_checks JumpNZ
-      = [ stackSize 2 ]
     instr_checks (Call a r)
       = [ stackSize (a+1) ]
     instr_checks (Return b)
@@ -247,7 +244,6 @@ instrChecks is AS{..} = instr_checks is
       where pcl = if gen_instrs getFlags /= InstrsBasic then
                      if lab apc == L then " (low)" else " (high)"
                   else ""
-    instr_checks LabelOf  = [ stackSize 1 ]
 
     if_not_basic s = if gen_instrs getFlags /= InstrsBasic then s else ""
 
@@ -282,13 +278,6 @@ astepInstr as@AS{..} is =
               then lab (astkData a) `lub` lab (astkData b)
               else L
       in as{ astk = AData (Labeled l $ ((+) `on` (value . astkData)) a b) : astk'
-           , apc = apc + 1 }
-    Sub -> 
-      let a:b:astk' = astk
-          l = if not bugArithNoTaint
-              then lab (astkData a) `lub` lab (astkData b)
-              else L
-      in as{ astk = AData (Labeled l $ ((-) `on` (value . astkData)) a b) : astk'
            , apc = apc + 1 }
     Push a -> 
       let a' = Labeled (if not bugPushNoTaint
@@ -335,18 +324,6 @@ astepInstr as@AS{..} is =
              (False, True ) -> astkData p
              (True , False) -> Labeled (lab apc) (value (astkData p))
              (True , True ) -> Labeled L (value (astkData p)) }
-    JumpNZ ->
-      let a:p:astk' = astk
-          labPC = lab apc `lub` astkLab a `lub` astkLab p
-          -- ASZ: Or, we could *not* include the astkLab p part for the apc+1
-          -- case, but then we have other questions to deal with.
-      in as {astk=astk', apc = if astkValue a /= 0
-                               then if not bugJumpNZNoRaisePcTaken
-                                    then astkData p `withLab` labPC
-                                    else astkData p
-                               else if not bugJumpNZNoRaisePcNotTaken
-                                    then (apc + 1) `withLab` labPC
-                                    else apc + 1}
     Call a r ->
       as { astk = take a (drop 1 astk) ++ [ARet (fmap (,r) (apc + 1))]
                   ++ drop (a+1) astk
@@ -369,11 +346,6 @@ astepInstr as@AS{..} is =
     
     Halt -> error "astepFn: Impossible: Can't execute Halt."
     
-    LabelOf ->
-      let a:astk' = astk
-      in as{ astk = AData (Labeled L $ labToInt (lab (astkData a))) : astk'
-           , apc = apc + 1 }
-
   where
     bugPushNoTaint
       = IfcBugPushNoTaint `elem` ifcsem

@@ -496,15 +496,7 @@ genByExecBothBranches
           = return $ map (fromMaybe Noop) istream
           | Just instr <- istream !! iptr
           -- Already generated instruction, just execute
-          = case instr of 
-              JumpNZ
-                | AData (Labeled l d) <- astk as !! 1
-                -> let as' = (astepFn as) { apc = apc as + 1 }
-                         -- Just go to next and store the target!
-                       jmpTbl' = (d,as'):jmpTbl
-                   in go (c+1) r jmpTbl' as' istream
-                         -- Otherwise just go on wherever the step function takes you
-              _ -> go (c+1) r jmpTbl (astepFn as) istream
+          = go (c+1) r jmpTbl (astepFn as) istream
           | otherwise
           -- Must generate instructions: but which state should we prefer? 
           -- Option (i):  the stored if any 
@@ -571,7 +563,6 @@ genByExecAllBranchesFwd
                                 _                   -> Nothing
                   jump = case instr of
                     Jump     -> jumpStk 0
-                    JumpNZ   -> jumpStk 1
                     Call _ _ -> jumpStk 0
                     Return _ -> 
                       case find (not . isAData) (astk as) of 
@@ -648,7 +639,6 @@ genByExecAllBranchesFwd2
                                 _                   -> Nothing
                   jump = case instr of
                     Jump     -> jumpStk 0
-                    JumpNZ   -> jumpStk 1
                     Call _ _ -> jumpStk 0
                     Return _ -> 
                       case find (not . isAData) (astk as) of 
@@ -847,7 +837,6 @@ genByFwdExec
                           _                   -> Nothing
             jump = case i of
                      Jump     -> jumpStk 0
-                     JumpNZ   -> jumpStk 1
                      Call _ _ -> jumpStk 0
                      Return _ -> 
                        case find (not . isAData) (astk as) of 
