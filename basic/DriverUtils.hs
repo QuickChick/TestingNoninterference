@@ -6,12 +6,12 @@ module DriverUtils where
 import Test.QuickCheck
 import qualified Test.QuickCheck.Property as QCProp
 import Test.QuickCheck.State 
+import Test.QuickCheck.Random
 import Control.Monad
 import Control.Applicative
 import Control.Arrow()
 import Data.Function
 import Data.List (sortBy, groupBy, nub, isInfixOf, intercalate)
-import System.Random
 
 import Text.Printf
 import System.CPUTime
@@ -330,7 +330,7 @@ profileTests :: Flaggy DynFlags
 profileTests
   = do { putStrLn $ "% Profiling"
        ; clear
-       ; gen <- newStdGen
+       ; gen <- newQCGen
        ; r <- quickCheckWithResult stdArgs { maxSuccess = 30000 -- Big enough for profiling
                                            , replay     = Just (gen, 42)
                                            , chatty     = False } $
@@ -380,7 +380,7 @@ profileVariations :: Flaggy DynFlags => IO ()
 profileVariations
   = do { putStrLn $ "% Profiling variations"
        ; clear
-       ; gen <- newStdGen
+       ; gen <- newQCGen
        ; r <- quickCheckWithResult stdArgs { maxSuccess = 30000
                                            , replay = Just (gen, 42)
                                            , chatty = False } prop
@@ -462,7 +462,7 @@ checkProperty discard_ref pr microsecs
                   -> error "Not a checkable property!"
                 PropJustProfileVariation
                   -> error "Not a checkable property!"
-   in do { gen <- newStdGen
+   in do { gen <- newQCGen
          ; let is_chatty = show_counterexamples getFlags
                is_latex  = latex_output getFlags
          ; when is_chatty $ do
