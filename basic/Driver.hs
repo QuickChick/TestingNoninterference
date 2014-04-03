@@ -110,20 +110,20 @@ main = do { flags <- cmdArgs dynFlagsDflt
                  when not_profiling $ do
                    void $ printf "\\extrabuginfo{%s}{\\%s}{%s}{%s}{\\%s}{%s}{%s}{%d}{%s}\n"
                             (show (gen_instrs f))
-                            (show (tmu_prop_test f))
+                            (show (prop_test f))
                             (show (equiv f))
                             (show (starting_as f))
                             (show s)
                             (show (smart_ints f))
-                            (show_timeout (tmu_timeout f))
+                            (show_timeout (timeout f))
                             (getMaxBugs f)
                             (show timestamp)
                    void $ printf "\\averagespeed{%0.0f}\n" avSpeed
                    void $ printf "\\averagediscrate{%0.0f\\%%}\n" avDiscRate
                return success
-          where not_profiling | PropJustProfile <- tmu_prop_test f
+          where not_profiling | PropJustProfile <- prop_test f
                               = False
-                              | PropJustProfileVariation <- tmu_prop_test f
+                              | PropJustProfileVariation <- prop_test f
                               = False
                               | otherwise = True
 
@@ -131,10 +131,10 @@ main = do { flags <- cmdArgs dynFlagsDflt
         
         do_ifc f b
           | let ?dfs = f
-          , PropJustProfile <- tmu_prop_test f
+          , PropJustProfile <- prop_test f
           = profileTests >> return (True,0,0,Nothing)
           | let ?dfs = f
-          , PropJustProfileVariation <- tmu_prop_test f
+          , PropJustProfileVariation <- prop_test f
           = profileVariations >> return (True,0,0,Nothing)
 
           | not $ run_timeout_tests f
@@ -142,7 +142,7 @@ main = do { flags <- cmdArgs dynFlagsDflt
                let ?dfs = f'
                putStrLn $ "% Flags: "++show f'
                ior <- newIORef 0
-               (r,_) <- checkProperty ior (tmu_prop_test f') $ 365*24*60*60*10^6 
+               (r,_) <- checkProperty ior (prop_test f') $ 365*24*60*60*10^6 
                pure . (,0,0,Nothing) $ case r of
                  Right (Success{})  -> True
                  Right (GaveUp{..}) -> numTests > 0
@@ -151,7 +151,7 @@ main = do { flags <- cmdArgs dynFlagsDflt
           | otherwise 
           = let bugs_per_sec c =
                   let (s::String) = printf "%0.3f" ( fromIntegral (bugs_c c)
-                                                   / fromIntegral (tmu_timeout f) :: Double)
+                                                   / fromIntegral (timeout f) :: Double)
                   in s ++ (extrap_info (extrapolated c))
                      
                 -- Compute MTTF in ms
@@ -177,7 +177,7 @@ main = do { flags <- cmdArgs dynFlagsDflt
             do { counters <- action (f{ifc_semantics_singleton = [b]})
                ; let gen_speed :: Double = 
                         (fromIntegral (run_c counters + disc_c counters) :: Double)
-                            / (fromIntegral (tmu_timeout f) :: Double)
+                            / (fromIntegral (timeout f) :: Double)
                ; let disc_rate :: Double = 100.00 * 
                            (fromIntegral (disc_c counters) / 
                               (fromIntegral (run_c counters + disc_c counters):: Double))

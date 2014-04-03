@@ -68,7 +68,7 @@ genNaive :: Flaggy DynFlags => Gen AS
 genNaive = mkWeighted (const 1)
 
 instrWeights :: Flaggy DynFlags => InstrKind -> Int
-instrWeights = case tmu_prop_test getFlags of
+instrWeights = case prop_test getFlags of
   PropEENI -> weights_EENI
   PropLLNI -> weights_LLNI
   PropJustProfile -> weights_EENI -- Using weights_EENI for profiling
@@ -933,7 +933,7 @@ ainstr imem_size slack as@(AS{amem=mem, astk=stk}) halt_weight =
     cally   = callsAllowed (gen_instrs getFlags)
     jumpy   = jumpAllowed  (gen_instrs getFlags)
 
-    prop = tmu_prop_test getFlags 
+    prop = prop_test getFlags 
 
 -- Like the above, but generate multiple instructions; mostly, this is just a
 -- clever way to do interesting things with Jump, Load, and Store by placing a

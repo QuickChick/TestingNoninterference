@@ -4,20 +4,12 @@ module Flags where
 import Data.Typeable
 import Data.Data
 
-data TMMRoutineConfig
-  = AllInstructionsLow
-  | AllInstructionsHigh
-  | AllInstructionsFault
-  | CorrectTMMRoutine
-  | NoTMMRoutine
-  deriving (Eq, Read, Show, Data, Typeable)
-
 data GenStrategy
   = GenNaive              -- Arbitrary memory/stack/instruction stream.
   | GenWeighted
   | GenSequence
 
-  | GenByExec             -- See Note [GenByExec] in TMUAbstractGen.
+  | GenByExec             -- See Note [GenByExec] in Generation.
   | GenByExec1
   | GenByExec2
   | GenByExec3
@@ -30,13 +22,13 @@ data GenStrategy
   | GenVariational4
 
 {-
-  | GenByExecBothBranches -- See Note [GenByExecBothBranches] in TMUAbstractGen.
+  | GenByExecBothBranches -- See Note [GenByExecBothBranches] in Generation.
   | GenByExecAllBranchesFwd
   | GenByExecAllBranchesFwd2
   | GenByExecAllBranchesFwd3
 -}
 
-  | GenByFwdExec          -- See Note [GenByExecFwdOnly] in TMUAbstractGen.
+  | GenByFwdExec          -- See Note [GenByExecFwdOnly] in Generation.
   | GenTinySSNI
 
   deriving (Eq, Read, Show, Data, Typeable)
@@ -70,7 +62,7 @@ allStrategies
     , GenTinySSNI ] 
 
 
-data TMUProperty
+data PropTest
   = 
     -- Abstract machine
     PropSynopsisNonInterference
@@ -90,8 +82,8 @@ data TMUProperty
 
   deriving (Eq, Read, Show, Data, Typeable)
 
-isTestableProperty :: TMUProperty -> Bool
-isTestableProperty s
+isTestableProp :: PropTest -> Bool
+isTestableProp s
   | PropJustProfile <- s = False
   | PropJustProfileVariation <- s = False
   | otherwise = True
@@ -257,20 +249,16 @@ data TMUDriver
                -- CH: the name singleton is misleading
              , ifc_semantics_singleton :: [IfcSemantics]
                -- A cached version of ifc_semantics, see TMUDriver.hs
-
-               -- TMM routine
-             , which_tmm_routine :: TMMRoutineConfig
                
                -- Other configuration settings
-             , tmu_abstract_steps    :: Int -- How many steps to test for
-             , tmu_concrete_steps    :: Int -- Max # of concrete steps between abs. states
+             , step_no               :: Int -- How many steps to test for
 
-             , tmu_timeout           :: Int -- Timeout in seconds
-             , tmu_max_tests         :: Int -- Maximum # of tests (subsidiary to timeout)
-             , tmu_max_discard_ratio :: Int
-             , tmu_prop_test         :: TMUProperty -- The property to test
-             , tmu_extrapol_mul      :: Int
-             , tmu_extrapol_add      :: Int
+             , timeout               :: Int -- Timeout in seconds
+             , max_tests         :: Int -- Maximum # of tests (subsidiary to timeout)
+             , max_discard_ratio :: Int
+             , prop_test         :: PropTest -- The property to test
+             , extrapol_mul      :: Int
+             , extrapol_add      :: Int
              , show_counterexamples  :: Bool -- print counterexamples of not?
              , conf_max_call_args    :: Int
 
@@ -283,17 +271,17 @@ data TMUDriver
 type DynFlags = TMUDriver
 
 getMaxBugs :: DynFlags -> Int
-getMaxBugs f = tmu_extrapol_add f + (tmu_timeout f) * (tmu_extrapol_mul f)
+getMaxBugs f = extrapol_add f + (timeout f) * (extrapol_mul f)
 
 -- The default setting for flags should produce a correct machine
 dynFlagsDflt :: DynFlags
 dynFlagsDflt
-  = TMUDriver { gen_instrs      = InstrsCally
+  = TMUDriver { gen_instrs       = InstrsCally
               , gen_strategy     = GenByExec
               , gen_instrs_range = (20,50)
                
               , starting_as = StartQuasiInitial
-              , equiv = EquivFull
+              , equiv       = EquivFull
               
               , smart_ints = True
               
@@ -306,17 +294,14 @@ dynFlagsDflt
               
               , ifc_semantics = "[IfcDefault]"
               , ifc_semantics_singleton = [IfcDefault]
-                                                      
-              , which_tmm_routine = CorrectTMMRoutine
               
-              , tmu_abstract_steps    = 50
-              , tmu_concrete_steps    = 5000 -- ASZ: See Note [TMU Concrete Steps]
-              , tmu_timeout           = 1
-              , tmu_max_tests         = maxBound `div` 100 -- See Notes [Max Tests Too Large]
-              , tmu_max_discard_ratio = 30
-              , tmu_prop_test         = PropLLNI
-              , tmu_extrapol_mul      = 10
-              , tmu_extrapol_add      = 1000
+              , step_no    = 50
+              , timeout    = 1
+              , max_tests         = maxBound `div` 100 -- See Notes [Max Tests Too Large]
+              , max_discard_ratio = 30
+              , prop_test         = PropLLNI
+              , extrapol_mul      = 10
+              , extrapol_add      = 1000
               , show_counterexamples  = False
               , conf_max_call_args    = 2
               , latex_output          = False
@@ -358,10 +343,6 @@ dynFlagsDflt
 -- and/or
 -- http://hackage.haskell.org/packages/archive/QuickCheck/2.5.1.1/doc/html/src/Test-QuickCheck-Test.html#quickCheckWithResult will take you there.
 
--- Note [TMU Concrete Steps]
--- ~~~~~~~~~~~~~~~~~~~~~~~~~
--- Morally, this perhaps ought to be relative to which_tm_routine, but we don't
--- have any non-terminating-TMM bugs.
 
 
 class Flaggy a where

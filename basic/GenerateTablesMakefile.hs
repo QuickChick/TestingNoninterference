@@ -4,7 +4,7 @@ module GenerateTablesMakefile where
 import Data.Char
 import Data.List
 import Control.Monad
-import TMUFlags
+import Flags
 
 import Data.Typeable
 
@@ -14,7 +14,7 @@ trim :: Show a => a -> String
 trim = dropWhile isLower . drop 1 . show
 
 data Parameters = Parameters { instrs   :: GenInstrs
-                             , prop     :: TMUProperty
+                             , prop     :: PropTest
                              , equiv    :: Equiv
                              , bugs     :: [IfcSemantics]
                              , start    :: StartingAS
@@ -87,12 +87,12 @@ instructions :: [GenInstrs]
 instructions = [InstrsBasic, InstrsCally]
                -- Removed: InstrsFull
 
-propsFor :: GenInstrs -> [TMUProperty]
+propsFor :: GenInstrs -> [PropTest]
 propsFor InstrsBasic = [PropEENI, PropLLNI]
 propsFor InstrsCally = [PropEENI, PropLLNI, PropSSNI]
 propsFor _           = error "propsFor: not supported"
 
-equivFor :: GenInstrs -> TMUProperty -> [Equiv]
+equivFor :: GenInstrs -> PropTest -> [Equiv]
 equivFor InstrsBasic PropEENI = [EquivMem, EquivLow]
 equivFor InstrsBasic PropLLNI = [EquivMem, EquivLow]
 equivFor InstrsCally PropEENI = [EquivMem, EquivLow, EquivFull]
@@ -117,21 +117,17 @@ bugsFor InstrsCally = bugsFor InstrsBasic ++
                       , IfcBugReturnNoTaint
                       , IfcBugValueOrVoidOnReturn 
                       , IfcBugPopPopsReturns ]
-bugsFor InstrsTMM   = bugsFor InstrsCally ++
-                      [ IfcBugJumpNZNoRaisePcTaken
-                      , IfcBugJumpNZNoRaisePcNotTaken ]
-bugsFor InstrsLabelOf = bugsFor InstrsTMM -- CH: whatever
 
 bugsFor InstrsJumpy = error "We are not supposed to call this, ever!" 
 
 
-startsFor :: TMUProperty -> Equiv -> [StartingAS]
+startsFor :: PropTest -> Equiv -> [StartingAS]
 startsFor PropSSNI _ = [StartArbitrary]
 startsFor _ equiv = [StartInitial | equiv /= EquivFull ] ++
                     [StartQuasiInitial | equiv == EquivLow] ++
                     [StartArbitrary | equiv == EquivFull]
 
-strategiesFor :: TMUProperty -> GenInstrs -> StartingAS -> [GenStrategy]
+strategiesFor :: PropTest -> GenInstrs -> StartingAS -> [GenStrategy]
 strategiesFor prop instrs start
   = [ GenNaive, GenByExec ] ++
     [ GenWeighted | prop == PropEENI || prop == PropLLNI] ++
@@ -140,7 +136,7 @@ strategiesFor prop instrs start
     [ GenTinySSNI | prop == PropSSNI
                     && start == StartArbitrary ]
     
-smartintsFor :: TMUProperty -> GenInstrs -> [Bool]
+smartintsFor :: PropTest -> GenInstrs -> [Bool]
 smartintsFor PropEENI InstrsBasic = [False, True]
 smartintsFor _        _           = [True]
 
@@ -156,12 +152,12 @@ allParameters = do instrs <- instructions
 
 -- Only the relevant configurations that we list in the paper at the moment
 
-relPropsFor :: GenInstrs -> [TMUProperty]
+relPropsFor :: GenInstrs -> [PropTest]
 relPropsFor InstrsBasic = [PropEENI]
 relPropsFor InstrsCally = [PropEENI, PropLLNI, PropSSNI]
 relPropsFor _           = error "relPropsFor: not supported"
 
-relEquivFor :: GenInstrs -> TMUProperty -> [Equiv]
+relEquivFor :: GenInstrs -> PropTest -> [Equiv]
 relEquivFor InstrsBasic PropEENI = [EquivMem]
 relEquivFor InstrsCally PropEENI = [EquivMem, EquivLow]
 relEquivFor InstrsCally PropLLNI = [EquivLow]
@@ -169,7 +165,7 @@ relEquivFor InstrsCally PropSSNI = [EquivFull]
   -- EquivMem, EquivLow, and EquivWrongFull don't work for SSNI
 relEquivFor _           _        = error "relEquivFor: not supported"
 
-relStartsFor :: TMUProperty -> GenInstrs -> Equiv -> [StartingAS]
+relStartsFor :: PropTest -> GenInstrs -> Equiv -> [StartingAS]
 relStartsFor PropSSNI _           _        = [StartArbitrary]
 relStartsFor PropEENI InstrsBasic _        = [StartInitial]
 relStartsFor PropEENI InstrsCally EquivMem = [StartInitial]
@@ -178,7 +174,7 @@ relStartsFor PropLLNI _           _        = [StartQuasiInitial]
 relStartsFor _        _           _        =
   error "relStartsFor: not supported"
 
-relStrategiesFor :: TMUProperty -> GenInstrs -> [GenStrategy]
+relStrategiesFor :: PropTest -> GenInstrs -> [GenStrategy]
 relStrategiesFor PropEENI InstrsBasic =
   [ GenWeighted, GenSequence, GenNaive, GenByExec ]
 relStrategiesFor PropEENI InstrsCally =  
@@ -189,7 +185,7 @@ relStrategiesFor PropSSNI InstrsCally =
   [ GenNaive, GenTinySSNI ]
 relStrategiesFor _ _ = error "relStrategiesFor: not supported"
 
-relSmartIntsFor :: TMUProperty -> GenInstrs -> GenStrategy -> [Bool]
+relSmartIntsFor :: PropTest -> GenInstrs -> GenStrategy -> [Bool]
 relSmartIntsFor PropEENI InstrsBasic strategy =
   [False | strategy == GenNaive
            || strategy == GenWeighted 

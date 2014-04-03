@@ -86,7 +86,7 @@ gen_prop_noninterference observe compare
 -- This does not seem to have an effect. Why???
 --   shrinking shrinkNothing (steps,steps) step_prop -- step_prop (steps,steps) 
  
- where steps = tmu_abstract_steps getFlags
+ where steps = step_no getFlags
         
        iptr_coverage as ass =
            -- How many distinct PCs are execute from the generated
@@ -335,7 +335,7 @@ profileTests
                                            , replay     = Just (gen, 42)
                                            , chatty     = False } $
               \(as :: AS) ->
-              forAll (traceN as (tmu_abstract_steps getFlags)) $
+              forAll (traceN as (step_no getFlags)) $
               \(Trace ass) ->
                 collect (show_wf as ass) $
                 Average.record (length ass) $
@@ -442,7 +442,7 @@ profileVariations
       show_wf_nicely (IF excuse) = excuse
 
 
-checkProperty :: Flaggy DynFlags => IORef Int -> TMUProperty -> Integer -> IO (Either Int Result,Integer)
+checkProperty :: Flaggy DynFlags => IORef Int -> PropTest -> Integer -> IO (Either Int Result,Integer)
 -- Returns used time in microseconds and either number of tests run (until timeout) or a result
 checkProperty discard_ref pr microsecs
  = let prop = case pr of
@@ -474,8 +474,8 @@ checkProperty discard_ref pr microsecs
          ; r <- timeout' microsecs $
            -- withTimeout $
                 quickCheckWithResult
-                   stdArgs { maxSuccess      = tmu_max_tests         getFlags
-                           , maxDiscardRatio = tmu_max_discard_ratio getFlags
+                   stdArgs { maxSuccess      = max_tests         getFlags
+                           , maxDiscardRatio = max_discard_ratio getFlags
                            , replay          = Just (gen,42)
                            , chatty          = is_chatty && not is_latex }
                                                -- CH: this also hides exceptions,
@@ -540,7 +540,7 @@ checkTimeoutProperty
                                      , disc_c = 0
                                      , times_c = []
                                      , extrapolated = Left () }
-        to_microsecs = toInteger (tmu_timeout getFlags) * 10^6
+        to_microsecs = toInteger (timeout getFlags) * 10^6
 
         extrapolate total_count left_over counters
           = let bump_ratio :: Double = fromIntegral total_count / fromIntegral (total_count - left_over)
@@ -561,7 +561,7 @@ checkTimeoutProperty
           = return counters
           | otherwise
           = do { writeIORef disc_ref 0
-               ; (r,used_microsecs) <- checkProperty disc_ref (tmu_prop_test getFlags) microsecs
+               ; (r,used_microsecs) <- checkProperty disc_ref (prop_test getFlags) microsecs
                ; real_discards <- readIORef disc_ref
                ; case r of
                     Left numTests -- Timeout while having run successfully numTests

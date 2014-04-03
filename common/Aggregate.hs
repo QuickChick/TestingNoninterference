@@ -1,7 +1,7 @@
 module Aggregate (aggregate, aggregateResults) where
 
 import Test.QuickCheck
-import Test.QuickCheck.Property
+import Test.QuickCheck.Text
 import Data.IORef
 import System.IO.Unsafe
 
@@ -19,7 +19,7 @@ aggregateResults = do
   xs <- readIORef aggrRef
   if null xs then return () else
     quickCheckWith stdArgs{maxSuccess = length xs} $
-      morallyDubiousIOProperty $ do
+      ioProperty $ do
         x:xs <- readIORef aggrRef
         writeIORef aggrRef xs
         return $ collect (MkStr x) True

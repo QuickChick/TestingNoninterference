@@ -1,7 +1,7 @@
 
 -= Prerequisites =-
-- GHC 7.4.x (known to work with 7.4.1)
-- QuickCheck 2.5
+- GHC 7.6.x (known to work with 7.6.3)
+- QuickCheck 2.7.x (known to work with 2.7.3)
 - make (can be found as part of MinGW, in ...\MinGW\msys\1.0\bin under Windows)
 - other UNIX utilities like echo, rm, etc.
 - Haskell package: CmdArgs 0.9.5 and above (available with 'cabal install cmdargs')
@@ -14,33 +14,28 @@ README
 Makefile
 Makefile.common
 
-alloc/  
-	AllocTest.hs
-	MulticoreAlloc.hs
-	SinglecoreAlloc.hs
 
-tmu/    -- Tag Management Unit 
-        TMUAbstract.hs    : definition of the abstract machine
-	TMUAbstractGen.hs : program random generation for the abstract machine
-	TMUAbstractObs.hs : observable classes and shrinking variations
-	TMUConcrete.hs    : definition of the concrete machine
-	TMUDriver.hs      : experiment set up, top level properties, main
-	TMUFlags.hs       : various flags configuration of a machine
-	TMUInstr.hs       : ISA
-	TMULabels.hs      : label systems, and observations
-	TMULayer.hs       : correspondence between abstract/concrete machine
-	TMUObservable.hs  : observable classes
+basic/    -- Basic IFC machine 
+        Machine.hs     : definition of the abstract machine
+	Generation.hs  : random program generation
+	Driver.hs      : experiment set up, top level properties, main
+	Flags.hs       : various flags configuration of a machine
+	Instr.hs       : ISA
+	Labels.hs      : label systems, and observations
+	Observable.hs  : observable classes
+	ObservableInst.hs : observable classes and shrinking variations
+        ...
+
+extended/ -- Extended IFC machine
+        ...
 
 common/ -- Common definitions, and helpers
 	Aggregate.hs
-	CollectTests.hs         : collecting properties to test
 	Machine.hs              : common definitions for generic "machines"
 	Pretty.hs               : pretty printing
-	THAutoLift.hs           
-	THLiftOrphans.hs        
-	THVersionCompat.hs      
 	Trace.hs                : execution traces
-	Util.hs                 : misc. helpers
+	Util.hs                 : misc. helpers 
+        ...
 
 -= Building =-
 
@@ -59,20 +54,20 @@ which case you need to make sure that this dir, its subdirs and the
 > chmod -R g-w .
 should usually solve the problem.
 
--= Running the TMU driver from command line =-
+-= Running the test driver from command line =-
 
-You may run the TMU driver from the command line with: 
-    ./TMUDriver
-This will run with the default configuration, shown in TMUFlags.hs
+You may run the test driver from the command line with: 
+    ./Driver
+This will run with the default configuration, shown in Flags.hs
 However you may override one of the options manually as well -- for
 instance:
-   ./TMUDriver --gen-strategy=GenNaive --tmu-tests=10000
+   ./Driver --gen-strategy=GenNaive --tests=10000
 or 
-   ./TMUDriver --gen-strategy=GenByExec --tmu-tests=30000
+   ./Driver --gen-strategy=GenByExec --tests=30000
 
-All values (and names for named options) are specified in TMUFlags.hs. Finally,
+All values (and names for named options) are specified in Flags.hs. Finally,
 you may run:
-   ./TMUDriver --help
+   ./Driver --help
 to see a list of available options.
 
 -= Basic profiling of test generation =-
@@ -80,13 +75,13 @@ to see a list of available options.
 TMUDriver contains flags that can profile tests for some 
 basic statistics. Namely, the 
 
-  --tmu-prop-test=PropJustProfileLengths
+  --prop-test=PropJustProfileLengths
 and
-  --tmu-prop-test=PropJustProfileWF
+  --prop-test=PropJustProfileWF
 
 run profiling on tests with the current configuration. The former is 
 profiling execution lenghts, the latter is profiling the reasons for 
-termination. You may use --tmu-tests to determine the number of tests, 
+termination. You may use --tests to determine the number of tests, 
 or --gen-strategy to determine under which strategy you want to profile, etc.
 
 -= Bulk testing and profiling =-
@@ -101,26 +96,19 @@ there exists a wildcard value:
    --ifc-semantics="*"
 which you may use to iterate over all bugs. 
 
-Moreover, each experiment can be repeated for:
-   --tmu-attempts 
-times. 
-
 When testing you may want to suppress printing information from the 
 actual counterexample, which you can do with:
    --show-counterexamples=False
 
 Here is an example usage:
 
-./TMUDriver --ifc-semantics="*" 
+./Driver --ifc-semantics="*" 
             --gen-strategy=GenByExec 
-            --tmu-tests=100 
-            --tmu-attempts=3 
             --show-counterexamples=False
 
-Iterates over all bugs using GenByExec, doing 3 QC invocations each with 
-100 tests, not showing counterexamples. It will print out average results 
-in some format [DV:TODO]
-
+Iterates over all bugs using GenByExec, not showing
+counterexamples. It will print out average results in some format
+[DV:TODO]
 
 -= Coding syntax rules =-
 

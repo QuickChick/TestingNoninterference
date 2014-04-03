@@ -43,9 +43,13 @@ strictModify rd wr f = do x <- f `liftM` rd
 modifyIORef' :: IORef a -> (a -> a) -> IO ()
 modifyIORef' = liftM2 strictModify readIORef writeIORef
 
+{- No longer works with latest QC
+    Couldn't match expected type `Test.QuickCheck.Random.QCGen'
+                with actual type `StdGen'
 pick :: Gen a -> IO a
 pick g = do seed <- getStdGen
             return $ unGen g seed 10
+-}
 
 allBounded :: (Enum a, Bounded a) => [a]
 allBounded = [minBound..maxBound]
