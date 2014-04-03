@@ -25,9 +25,6 @@ import TMUAbstract
 import TMUAbstractGen () -- Import just Arbitrary
 import TMUAbstractObs ()
 
-import TMULayer ()       -- Import just instances
-
-
 import System.Time
 import System.Exit
 

@@ -17,8 +17,6 @@ import TMULabels
 import TMUFlags
 import TMUInstr
 
-import TMUTMMRoutine (tmmRoutine, tmuCacheSize)
-
 import TMUAbstract
 
 import Data.List ( isInfixOf )
@@ -135,7 +133,7 @@ genSequence = do
        StartInitial      -> liftA2 (,) (pure []) (pure L)
        StartQuasiInitial -> liftA2 (,) (listOf $ AData <$> (labeled $ gInt)) (pure L)
        StartArbitrary    -> arbitrary
-  return $ AS {apc = Labeled apcl $ length tmmRoutine, ..}
+  return $ AS {apc = Labeled apcl 0, ..}
 
 -- Here somebody has just repeated the frequency table for ainstr with
 -- no extra cleverness! TODO: try to share these tables
@@ -181,7 +179,7 @@ mkWeighted w = do
        StartInitial      -> liftA2 (,) (pure []) (pure L)
        StartQuasiInitial -> liftA2 (,) arbitrary (pure L)
        StartArbitrary    -> arbitrary
-  return $ AS {apc = Labeled apcl $ length tmmRoutine, ..}
+  return $ AS {apc = Labeled apcl 0, ..}
 
  where gen_stk = listOf $
  -}               
@@ -225,11 +223,11 @@ smartIntWeighted (int_weight,imem_weight,mem_weight) aimemSize amemSize
 
 genValidIAddr :: Flaggy DynFlags => Int -> Gen Int
 genValidIAddr aimemSize
-  = choose (length tmmRoutine, aimemSize + length tmmRoutine)
+  = choose (0, aimemSize)
 
 genValidMAddr :: Flaggy DynFlags => Int -> Gen Int
 genValidMAddr amemSize
-  = choose (tmuCacheSize, amemSize + tmuCacheSize)
+  = choose (0, amemSize)
 
 
 {----------------------------------------------------------------------
@@ -257,14 +255,14 @@ initAS :: Flaggy DynFlags => Int -> Gen ([Atom],[AStkElt],Atom)
 -- contents of memory and stack.
 initAS n = case starting_as getFlags of
   StartInitial ->
-    liftA3 (,,) initMem (pure []) (pure . Labeled L $ length tmmRoutine)
+    liftA3 (,,) initMem (pure []) (pure . Labeled L $ 0)
   StartQuasiInitial ->
     do (stk,mem) <- stkMem n
-       pure (stk,mem,Labeled L $ length tmmRoutine)
+       pure (stk,mem,Labeled L 0)
   StartArbitrary ->
     do (stk,mem) <- stkMem n 
        pcl <- arbitrary
-       pure (stk,mem,Labeled pcl $ length tmmRoutine)
+       pure (stk,mem,Labeled pcl 0)
   -- where
   --   stkMem =
   --     do { amemSize  <- sized $ \n -> choose (0,n)
@@ -772,7 +770,7 @@ genByExecAllBranchesFwd3
                 slack           = length (takeWhile isNothing ispost) -- How much space?
                 is_any_stored   = find is_index_stored [1 ..(slack-1)]
                 is_index_stored i = tainted &&
-                                      isJust (lookup (iptr + length tmmRoutine + i) jmpTbl)
+                                      isJust (lookup (iptr + 0 + i) jmpTbl)
                 real_slack = case is_any_stored of
                                 Nothing -> slack
                                 Just i  -> i
@@ -828,7 +826,7 @@ genByFwdExec
       -- ignore forward jumps in tainted states.
       genIs' _ _ _ 0 as _ halting_weight = return $ aimem as
       genIs' tainted tbl n m as0 is halting_weight = do
-        let pc = length tmmRoutine + length (aimem as0)
+        let pc = 0 + length (aimem as0)
             stored = lookup pc tbl
             fromFwdJump = isJust stored && tainted
             as | not tainted = as0
@@ -836,12 +834,12 @@ genByFwdExec
         (i, is) <- case is of
           i:is | not fromFwdJump
                  -> return (i,is) 
---                    trace ("Generated: (pc = " ++ show (pc - length tmmRoutine) ++ ")" ++ 
+--                    trace ("Generated: (pc = " ++ show (pc - 0) ++ ")" ++ 
 --                              show i) $ (i, is)
           _ -> do
             i:is <- ainstrs n (n - length (aimem as)) as halting_weight -- n - |aimem| is the `slack` we have
             return (i,is)
-                 -- trace ("Generated: (pc = " ++ show (pc - length tmmRoutine) ++ ")" ++ 
+                 -- trace ("Generated: (pc = " ++ show (pc - 0) ++ ")" ++ 
                  --             show i) $ (i, is)
         let as' = as { aimem = aimem as0 ++ [i],
                        -- Hack: pretend that the next instr is the one we generate
@@ -997,16 +995,16 @@ ainstrs imem_size slack as@(AS{amem = mem, astk = stk}) halt_weight =
              ; pushAndDo (Call c_args c_ret) <$> labeled iaddr }) | cally ]
   where
     iaddr = if smart_ints getFlags
-            then imem_size `upfrom` length tmmRoutine
+            then imem_size `upfrom` 0
             else int
     maddr = frequency $
-            [ (1, (length mem `upfrom` tmuCacheSize))
+            [ (1, (length mem `upfrom` 0))
 -- DV: used to be like this 
 -- but this is a bug: min associates to the 
 -- left so if the length of the memory is e.g 1
 -- we get out of address violations ...  
---          , (9, ((length mem `min` tmuCacheSize+2) `upfrom` tmuCacheSize)) 
-            , (9, ((length mem `min` 3) `upfrom` tmuCacheSize))
+--          , (9, ((length mem `min` 0+2) `upfrom` 0)) 
+            , (9, ((length mem `min` 3) `upfrom` 0))
             -- Instead I will just reuse very often the first three memory locations
             ]
             -- ensure we reuse locations often
@@ -1015,7 +1013,7 @@ ainstrs imem_size slack as@(AS{amem = mem, astk = stk}) halt_weight =
       let is_wf WF = True
           is_wf _  = False
           all_addresses
-            = take 3 [tmuCacheSize .. (tmuCacheSize + length (amem as) - 1)] 
+            = take 3 [0 .. (0 + length (amem as) - 1)] 
           goodA a = wfChecks $ instrChecks Store (astepInstr as (Push a))
           good_maddrs w l =
             let vls = filter (\n -> is_wf $ goodA (Labeled l n)) all_addresses
@@ -1070,7 +1068,7 @@ genTinySSNI
        ; let as = AS { amem  = amem
                      , aimem = [undefined] -- to be filled in later
                      , astk  = astk ++ extraRet
-                     , apc   = Labeled apcl $ length tmmRoutine }
+                     , apc   = Labeled apcl 0 }
        ; instr1 <- ainstr' as
          -- often generate related instructions
        ; instr2 <- frequency [(10, varyInstr instr1), (1, ainstr' as)]
@@ -1078,7 +1076,7 @@ genTinySSNI
   | otherwise
   = error "Only use this generator for starting in an arbitrary state!"
   where genDataPtr = if smart_ints getFlags
-                     then choose (tmuCacheSize,2+tmuCacheSize)
+                     then choose (0,2+0)
                      else int
         -- adapted from TMUAbstractObs since I couldn't import it (circular)
         varyInstr (Push a)   = Push <$> varyAtom a

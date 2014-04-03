@@ -71,25 +71,15 @@ allStrategies
 
 
 data TMUProperty
-  = -- Concrete machine
-    PropTMUCacheSafe
-  | PropTMUCacheSafeUnlifted
-  | PropTMMRoutineSafe
-  | PropTMMRoutineSafeUnlifted
-    
+  = 
     -- Abstract machine
-  | PropSynopsisNonInterference
+    PropSynopsisNonInterference
   | PropLLNI
   | PropSSNI
   | PropEENI
     
     -- broken variant
   | PropEENInoLow
-
-    -- Concrete-abstract interactions
-  | PropAbstractToConcretePreservesWF
-  | PropConcreteAbstractEqualStep
-  | PropConcreteAbstractEqualTrace
   
     -- Profiling
   | PropJustProfile -- Profiling execution lengths

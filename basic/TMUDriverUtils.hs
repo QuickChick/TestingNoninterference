@@ -10,7 +10,7 @@ import Control.Monad
 import Control.Applicative
 import Control.Arrow()
 import Data.Function
-import Data.List (sort, sortBy, groupBy, nub, isInfixOf, intercalate)
+import Data.List (sortBy, groupBy, nub, isInfixOf, intercalate)
 import System.Random
 
 import Text.Printf
@@ -32,14 +32,9 @@ import TMUFlags
 import TMUObservable
 import TMUInstr
 
-import TMUTMMRoutine (tmmRoutine, tmuCacheSize)
-
 import TMUAbstract
 import TMUAbstractGen () -- Import just Arbitrary
 import TMUAbstractObs ()
-
-import TMUConcrete
-import TMULayer ()       -- Import just instances
 
 import QuickCheckTimeout (timeout')
 
@@ -47,40 +42,6 @@ import QuickCheckTimeout (timeout')
 
 
 {----------------------------- Properties to test -----------------------------}
-
-{----- Concrete machine -----}
-
--- You probably want to test this with lift_cs_prop, as purely arbitrary CSes
--- are of low quality.
-prop_tmu_cache_safe :: Flaggy DynFlags => CS -> Property
-prop_tmu_cache_safe cs =
-  -- We check for so many steps because calling into the TMM and the
-  -- instructions
-  -- taken therein are all counted in the taken steps, but we only care about
-  -- the transitions between the TMM and user code.  (So careful about calling
-  -- this one for more than, say, 1k tests---it's quick enough that you won't
-  -- hate yourself, but slower than you expect.  Roughly 15% of tests execute
-  -- for all 2501 instructions when called with lift_cs_prop.)  
-  shrinking shrink steps $ \n ->
-    forAll (traceN cs n) $ \(Trace css) ->
-      -- Note that we check the privileged bit in the stepped TO machine, not
-      -- the stepped FROM machine.  This is because (a) on a cache lookup, the
-      -- cache gets set by the previous unprivileged instruction and *then* the
-      -- privileged bit is updated, and (b) because when we return from the TMM,
-      -- we've already finished storing at least one instruction ahead of time.
-      collect (length css) $
-      and [ priv cs' || ((==) `on` (take tmuCacheSize . mem)) cs cs'
-          | (cs,cs') <- (zip <*> tail) css ]
-  where steps = liftA2 (*) tmu_abstract_steps tmu_concrete_steps getFlags
-
--- All the comments for prop_tmu_cache_safe apply.
-prop_tmm_routine_safe :: Flaggy DynFlags => CS -> Property
-prop_tmm_routine_safe cs =
-  shrinking shrink steps $ \n ->
-    forAll (traceN cs n) $ \(Trace css) ->
-      collect (length css) $
-      all (\CS{..} -> priv || value pc >= length tmmRoutine) css
-  where steps = liftA2 (*) tmu_abstract_steps tmu_concrete_steps getFlags
 
 {----- Abstract machine-----}
 
@@ -352,78 +313,10 @@ prop_single_step (Smart _ (Shrink2 (Variation as1 as2))) =
              Nothing   -> abandon
   where xs ? i | 0 <= i && i < length xs = Just $ xs !! i
                | otherwise               = Nothing
-        successful as@AS{..} = (aimem ? (value apc - length tmmRoutine)) == Just Halt
+        successful as@AS{..} = (aimem ? (value apc)) == Just Halt
         step' as | isWF as   = Just <$> step as
                  | otherwise = pure Nothing
         abandon = (False ==> True) 
-
-{----- Combined abstract and concrete machines -----}
-
-lift_cs_prop :: (Flaggy DynFlags, Testable prop) => (CS -> prop) -> (AS -> prop)
-lift_cs_prop = (. concretize)
-
-lift_cs_prop' :: (Flaggy DynFlags, Testable prop)
-              => (Smart (Shrink2 CS) -> prop) -> (Smart (Shrink2 AS) -> prop)
-lift_cs_prop' prop (Smart s (Shrink2 as)) = prop (Smart s (Shrink2 $ concretize as))
-
--- Just a pretty version of the instructions executed by a trace.
-instructions :: [CS] -> [String]
-instructions css =
-  [ opCode $ imem cs !! value (pc cs) | cs <- init css ]
-
--- Which kind of instruction we have, less any argument.
-opCode :: Instr -> String
-opCode i = takeWhile (/= ' ') $ show i
-
-prop_abstract_to_concrete_preserves_wf :: Flaggy DynFlags 
-                                       => Smart (Shrink2 AS) -> Property
-prop_abstract_to_concrete_preserves_wf (Smart _ (Shrink2 as)) =
-  property $ isWF as --> isWF (concretize as)
-
-prop_concrete_abstract_equal_step :: Flaggy DynFlags 
-                                  => Smart (Shrink2 AS) -> Property
-prop_concrete_abstract_equal_step (Smart _ (Shrink2 as)) =
-  (isWF as ==>) .
-  forAll (step as) $ \as' ->
-    forAll (stepUntilAbstractable concreteSteps $ concretize as) $ \cs' ->
-      -- NB: if stepUntilAbstractable doesn't reach an abstractable state, it
-      -- JUST STOPS, it doesn't return a Nothing.  This will, of course, cause
-      -- things to fail, but maybe not in the way you would expect.
-      maybe False ((as' ==) . abstract) cs'
-  where concreteSteps = tmu_concrete_steps getFlags
-
-prop_concrete_abstract_equal_trace :: Flaggy DynFlags 
-                                   => Smart (Shrink2 AS) -> Property
-prop_concrete_abstract_equal_trace (Smart _ (Shrink2 as)) =
-  shrinking shrink abstractSteps $ \maxASteps ->
-    forAll (traceN as maxASteps) $ \(Trace ass) ->
-      forAll (traceNAbs concreteSteps (concretize as) maxASteps) $ \(Trace css) ->
-        ass == map abstract css
-  where abstractSteps = tmu_abstract_steps getFlags
-        concreteSteps = tmu_concrete_steps getFlags
-
--- XXX I am not entirely sure what's going on here.
--- TODO: get QC wizards to explain... :-)
-prop_correct :: Flaggy DynFlags => Property
-prop_correct =
-  gen_prop_correct (length tmmRoutine * 10) 200 arbitrary $ \css ass prop ->
-  let pcs = [ apc as | as <- ass ]
-      is  = [ aimem as !! (value (apc as) - length tmmRoutine) | as <- ass ]
-      pccount = sort $ map snd $ bagify pcs
-  in
-  whenFail (when (show_counterexamples getFlags) $
-            do mapM_ print ass
-               putStrLn "---"
-               mapM_ print css
-           ) $
-  -- collect ((5 *) $ (`div` 5) $ length $ nub pcs) $
-  --- collect (maximum $ 0 : map snd (bagify pcs)) $
-  --- collect (length ass) $
-  --- collect pccount $
-  --- collect (bagify pcs) $
-  --aggregate [ opCode (aimem as !! (value (apc as) - length tmmRoutine)) | as <- ass ] $
-  prop -- && and [ take 1 (astk as) < [100] | as <- take 1 $ reverse ass ]
-  -- && (any (/=1) pccount || length pccount > 2 || (value (pc (css !! length ass)) == length alloc))
 
 
 {----- Main -----}
@@ -553,14 +446,6 @@ checkProperty :: Flaggy DynFlags => IORef Int -> TMUProperty -> Integer -> IO (E
 -- Returns used time in microseconds and either number of tests run (until timeout) or a result
 checkProperty discard_ref pr microsecs
  = let prop = case pr of
-                PropTMUCacheSafe
-                  -> propertyF $ lift_cs_prop prop_tmu_cache_safe
-                PropTMUCacheSafeUnlifted
-                  -> propertyF prop_tmu_cache_safe
-                PropTMMRoutineSafe
-                  -> propertyF $ lift_cs_prop prop_tmm_routine_safe
-                PropTMMRoutineSafeUnlifted
-                  -> propertyF prop_tmm_routine_safe
                 
                 PropSynopsisNonInterference
                   -> propertyF prop_semantic_noninterference
@@ -572,14 +457,7 @@ checkProperty discard_ref pr microsecs
                   -> propertyF prop_end_to_end
                 PropEENInoLow
                   -> propertyF $ prop_end_to_end_aux True
-                
-                PropAbstractToConcretePreservesWF
-                  -> propertyF prop_abstract_to_concrete_preserves_wf
-                PropConcreteAbstractEqualStep
-                  -> propertyF prop_concrete_abstract_equal_step
-                PropConcreteAbstractEqualTrace
-                  -> propertyF prop_concrete_abstract_equal_trace
-                
+                                
                 PropJustProfile
                   -> error "Not a checkable property!"
                 PropJustProfileVariation

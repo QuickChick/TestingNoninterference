@@ -22,8 +22,6 @@ import TMUFlags
 import TMUObservable
 import TMUInstr
 
-import TMUTMMRoutine (tmmRoutine, tmuCacheSize)
-
 -- import Debug.Trace
 
 {---------------------------- The abstract machine ----------------------------}
@@ -144,7 +142,7 @@ instance Flaggy DynFlags => Arbitrary AStkElt where
                   [ (1,liftM ARet  (labeled ret_arbitrary)) | cally ] 
     where ret_arbitrary =
             liftM2 (,) (if smart_ints getFlags
-                        then choose (length tmmRoutine,length tmmRoutine + 20)
+                        then choose (0, 20)
                         else int) arbitrary
           cally :: Flaggy DynFlags => Bool 
           cally         = callsAllowed (gen_instrs getFlags)
@@ -160,11 +158,13 @@ instance Flaggy DynFlags => Arbitrary AStkElt where
 -- uses of absAdjust[I]Addr, and it would be nice if the compiler
 -- could tell me.
 -- TODO Phantom types should be good for this! [BCP]
+-- TODO: CH: get rid of this crap
 absAdjustAddr :: Flaggy DynFlags => Int -> Int
-absAdjustAddr  ma = ma - tmuCacheSize
+absAdjustAddr  ma = ma
 
+-- TODO: CH: get rid of this crap
 absAdjustIAddr :: Flaggy DynFlags => Int -> Int
-absAdjustIAddr ia = ia - length tmmRoutine
+absAdjustIAddr ia = ia
 
 -- TODO (a bit later): refine the machine so that the call stack is
 -- separate from the data stack and the return instruction (which will
