@@ -109,9 +109,7 @@ instance Flaggy DynFlags => Arbitrary Instr where
                                       arbitrary,
                           liftM Return arbitrary]
                        else []) ++
-                      [return Halt] ++
-                      (if tmmAllowed gi then [return Sub, return JumpNZ] else []) ++
-                      (if labelOfAllowed gi then [return LabelOf] else []) 
+                      [return Halt]
     where gi :: Flaggy DynFlags => GenInstrs
           gi = gen_instrs getFlags
 

@@ -194,8 +194,6 @@ data GenInstrs
   = InstrsBasic -- Generate only very basic instructions (Add/Push/Noop/Load/Store/Halt)
   | InstrsJumpy -- + allowed to generate jumps
   | InstrsCally -- + allowed to generate calls/returns
-  | InstrsTMM  -- + Sub and JumpNZ
-  | InstrsLabelOf -- + LabelOf (unclear status at the moment)
   deriving (Eq, Read, Show, Data, Typeable,
             Ord -- n.b.!
             )
@@ -205,12 +203,6 @@ callsAllowed = (>= InstrsCally)
 
 jumpAllowed :: GenInstrs -> Bool
 jumpAllowed = (>= InstrsJumpy)
-
-tmmAllowed :: GenInstrs -> Bool
-tmmAllowed = (>= InstrsTMM)
-
-labelOfAllowed :: GenInstrs -> Bool
-labelOfAllowed = (>= InstrsLabelOf)
 
 data StartingAS = StartInitial | StartQuasiInitial | StartArbitrary
                 deriving (Eq, Read, Show, Ord, Enum, Bounded, Data, Typeable)

@@ -126,7 +126,6 @@ genSequence = do
       cally  = callsAllowed (gen_instrs getFlags)
       jumpy  = jumpAllowed  (gen_instrs getFlags)
       genAll = jumpAllowed  (gen_instrs getFlags)
-      genTMM = tmmAllowed   (gen_instrs getFlags)
 
   aimem <- genInstrMem 0 [] aimemSize
   (astk,apcl) <- case starting_as getFlags of
@@ -195,15 +194,10 @@ genWeightedInstr w gint = frequency $
       [ (w LOAD,    pure Load) ] ++
       [ (w CALL,    liftM2 Call (choose (0, maxArgs)) arbitrary) | cally ] ++ 
       [ (w RETURN,  liftM Return arbitrary) | cally ] ++
-      [ (w JUMP,    pure Jump) | jumpy ] ++
-      [ (w SUB,     pure Sub) | tmmy ] ++
-      [ (w JUMPNZ,  pure JumpNZ) | tmmy ] ++
-      [ (w LABELOF, pure LabelOf) | labely ]
+      [ (w JUMP,    pure Jump) | jumpy ]
     where maxArgs = conf_max_call_args getFlags
           cally   = callsAllowed   $ gen_instrs getFlags
           jumpy   = jumpAllowed    $ gen_instrs getFlags
-          tmmy    = tmmAllowed     $ gen_instrs getFlags
-          labely  = labelOfAllowed $ gen_instrs getFlags
 
 -- generate valid code and data addresses more often
 smartInt :: Flaggy DynFlags => Int -> Int -> Gen Int
@@ -892,10 +886,6 @@ ainstr imem_size slack as@(AS{amem=mem, astk=stk}) halt_weight =
                       , let vt' = absAdjustIAddr vtop
                       , vt' >= 0 && vt' < imem_size
                       , jumpy ] ++
-    [ (10, pure JumpNZ) | nstk >= 2
-                        , let vt' = absAdjustIAddr vsnd
-                        , vt' >= 0 && vt' < imem_size
-                        , genTMM ] ++
     [ (40, liftM2 Call (choose (0, (nstk-1) `min` maxArgs)) arbitrary)
                          | nstk >= 1
                          , let vt' = absAdjustIAddr vtop
@@ -906,7 +896,6 @@ ainstr imem_size slack as@(AS{amem=mem, astk=stk}) halt_weight =
     if slack <= 1 then [] else
 --    if length (aimem as) + 1  then [] else
     [ (40, pure Add) | nstk >= 2 ] ++
-    [ (40, pure Sub) | nstk >= 2, genTMM ] ++
     [ (300, Push <$> (labeled $ smartInt imem_size $ length mem)) ] ++
     [ (40, pure Pop) |
       if IfcBugPopPopsReturns `elem` ifc_semantics_singleton getFlags 
@@ -921,8 +910,7 @@ ainstr imem_size slack as@(AS{amem=mem, astk=stk}) halt_weight =
     [ (40, liftM Return arbitrary) | Just r <- [ fmap astkReturns $
                                                  find (not . isAData) stk]
                                    , nstk >= if r then 1 else 0 
-                                   , cally ] ++
-    [ (40, pure LabelOf) | labelOfAllowed $ gen_instrs getFlags ]
+                                   , cally ]
   where
 
     halt_extra_weight
@@ -944,7 +932,6 @@ ainstr imem_size slack as@(AS{amem=mem, astk=stk}) halt_weight =
     maxArgs = conf_max_call_args getFlags
     cally   = callsAllowed (gen_instrs getFlags)
     jumpy   = jumpAllowed  (gen_instrs getFlags)
-    genTMM  = tmmAllowed   (gen_instrs getFlags)
 
     prop = tmu_prop_test getFlags 
 
@@ -975,21 +962,6 @@ ainstrs imem_size slack as@(AS{amem = mem, astk = stk}) halt_weight =
 --                                               , length stk >= 1 ] ++
     
     [ (1, pushAndDo Jump  <$> labeled iaddr) | jumpy ] ++
-    [ (1, sequence [ Push <$> labeled iaddr
-                   , Push <$> labeled (oneof [ pure 0
-                                             , oneof [ choose (-10,-1)
-                                                     , choose (1,10) ]])
-                              -- DV: I experimented with using choose(0,1) as the above
-                              -- seems pretty skewed but due to the small frequency the
-                              -- difference is negligible.
-                              -- JH: I made it 0 50% of the time. JumpOnZ was being taken
-                              -- in only 6% of cases--now it's taken 60% of the time.
-                              -- ASZ: We switched from JumpOnZ to JumpNZ, and so
-                              -- I changed this to ensure a 50-50 split again
-                              -- (previously, it would have generated 0 slightly
-                              -- more often, since int could generate 0s).  I
-                              -- hope this doesn't screw anything up.
-                   , pure JumpNZ]) | genTMM ] ++
     [ (1, do { c_args <- choose(0, maxArgs `min` length (takeWhile isAData stk))
              ; c_ret  <- arbitrary
              ; pushAndDo (Call c_args c_ret) <$> labeled iaddr }) | cally ]
@@ -1028,7 +1000,6 @@ ainstrs imem_size slack as@(AS{amem = mem, astk = stk}) halt_weight =
     cally  = callsAllowed (gen_instrs getFlags)
     jumpy  = jumpAllowed  (gen_instrs getFlags)
     genAll = jumpAllowed  (gen_instrs getFlags)
-    genTMM = tmmAllowed   (gen_instrs getFlags)
 
 -- instance Flaggy DynFlags => Arbitrary AS where
 --   arbitrary = genAS
@@ -1116,11 +1087,7 @@ ainstr' as@(AS{amem=mem, astk=stk}) =
                                    , nstk >= if r then 1 else 0 
                                    , cally ] ++
     [ (10, pure Jump) | nstk >= 1
-                      , jumpy ] ++
-    [ (10, pure JumpNZ) | nstk >= 2
-                        , genTMM ] ++
-    [ (10, pure Sub) | nstk >= 2, genTMM ] ++
-    [ (10, pure LabelOf) | labelOfAllowed $ gen_instrs getFlags ]
+                      , jumpy ]
   where
     nstk    = length $ takeWhile isAData stk
     vtop    = astkValue $ head stk
@@ -1129,4 +1096,3 @@ ainstr' as@(AS{amem=mem, astk=stk}) =
     maxArgs = conf_max_call_args getFlags
     cally   = callsAllowed (gen_instrs getFlags)
     jumpy   = jumpAllowed (gen_instrs getFlags)
-    genTMM  = tmmAllowed   (gen_instrs getFlags)
