@@ -1,0 +1,45 @@
+LLNI with naive and gen-by-exec from arbitrary states
+TMUATTEMPTS=10 TMUTESTS=200000
+
+GenNaive & IfcBugAddNoTaint & 0.03s (19) 
+GenNaive & IfcBugAllowWriteDownThroughHighPtr & 6.49s (27426) 
+GenNaive & IfcBugAllowWriteDownWithHighPc & 80% 
+GenNaive & IfcBugJumpNZNoRaisePcNotTaken & 0% 
+GenNaive & IfcBugJumpNZNoRaisePcTaken & 0% 
+GenNaive & IfcBugJumpNoRaisePc & 0% 
+GenNaive & IfcBugLoadNoTaint & 2.66s (11297) 
+GenNaive & IfcBugPushNoTaint & 0.01s (28) 
+GenNaive & IfcBugStoreNoTaint & 80% 
+
+GenByExec & IfcBugAddNoTaint & 0.18s (5) 
+GenByExec & IfcBugAllowWriteDownThroughHighPtr & 3.56s (438) 
+GenByExec & IfcBugAllowWriteDownWithHighPc & 7.41s (400) 
+GenByExec & IfcBugJumpNZNoRaisePcNotTaken & 4.55s (842) 
+GenByExec & IfcBugJumpNZNoRaisePcTaken & 2.68s (90) 
+GenByExec & IfcBugJumpNoRaisePc & 5.49s (119) 
+GenByExec & IfcBugLoadNoTaint & 3.40s (1115) 
+GenByExec & IfcBugPushNoTaint & 0.22s (1) 
+GenByExec & IfcBugStoreNoTaint & 20.78s (3019) 
+
+------------------------------------------------------------
+TMUATTEMPTS=20 TMUTESTS=3000000
+
+GenNaive & IfcBugAddNoTaint & 0.03s & 24 & 1741
+GenNaive & IfcBugAllowWriteDownThroughHighPtr & 7.10s & 30609 & 909
+GenNaive & IfcBugAllowWriteDownWithHighPc & 24.67s & 94108 & 3244
+GenNaive & IfcBugJumpNZNoRaisePcNotTaken & 0% &  & 
+GenNaive & IfcBugJumpNZNoRaisePcTaken & 0% &  & 
+GenNaive & IfcBugJumpNoRaisePc & 0% &  & 
+GenNaive & IfcBugLoadNoTaint & 4.57s & 19909 & 958
+GenNaive & IfcBugPushNoTaint & 0.02s & 46 & 1353
+GenNaive & IfcBugStoreNoTaint & 59.27s & 238269 & 2209
+
+GenByExec & IfcBugAddNoTaint & 0.23s & 5 & 1385
+GenByExec & IfcBugAllowWriteDownThroughHighPtr & 2.28s & 742 & 1322
+GenByExec & IfcBugAllowWriteDownWithHighPc & 8.13s & 538 & 2987
+GenByExec & IfcBugJumpNZNoRaisePcNotTaken & 4.40s & 689 & 2388
+GenByExec & IfcBugJumpNZNoRaisePcTaken & 2.16s & 109 & 2694
+GenByExec & IfcBugJumpNoRaisePc & 6.28s & 189 & 2605
+GenByExec & IfcBugLoadNoTaint & 2.72s & 876 & 1707
+GenByExec & IfcBugPushNoTaint & 0.20s & 1 & 1800
+GenByExec & IfcBugStoreNoTaint & 11.69s & 2763 & 2593

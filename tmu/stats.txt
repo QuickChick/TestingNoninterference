@@ -1,0 +1,151 @@
+800000 tests per attempt, 30 attempts (single threaded machine, 12/12/2012
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+dimitris@artemis:~/safeqc/safeqc/tmu$ EXTRATMUARGS="--gen-empty-init-stk=True" make simpletables && echo "Nonempty now" && make simpletables
+
+ghc --make -main-is TMUDriver -O2 -Werror -fwarn-unused-imports -fwarn-missing-signatures -fwarn-unused-do-bind -fwarn-incomplete-patterns -fwarn-tabs -i..//common   TMUDriver.hs
+
+PropSemanticNonInterference & GenNaive & IfcBugAddNoTaint & 11.007 & 98490 & 1.000 & 2745
+PropSemanticNonInterference & GenNaive & IfcBugPushNoTaint & 4.924 & 44294 & 1.000 & 2374
+PropSemanticNonInterference & GenNaive & IfcBugLoadNoTaint & 84.319 & 772757 & 0.067 & 93
+PropSemanticNonInterference & GenNaive & IfcBugStoreNoTaint & 70.321 & 642523 & 0.400 & 460
+PropSemanticNonInterference & GenNaive & IfcBugAllowWriteDownThroughHighPtr & 17.275 & 162377 & 0.967 & 1064
+
+PropLowLockStep & GenNaive & IfcBugAddNoTaint & 0.166 & 539 & 1.000 & 2904
+PropLowLockStep & GenNaive & IfcBugPushNoTaint & 0.009 & 27 & 1.000 & 1037
+PropLowLockStep & GenNaive & IfcBugLoadNoTaint & 8.451 & 58225 & 1.000 & 1169
+PropLowLockStep & GenNaive & IfcBugStoreNoTaint & 92.674 & 649532 & 0.333 & 415
+PropLowLockStep & GenNaive & IfcBugAllowWriteDownThroughHighPtr & 16.050 & 114143 & 1.000 & 1061
+
+PropSemanticNonInterference & GenNaiveLonger & IfcBugAddNoTaint & 7.948 & 70705 & 1.000 & 3101
+PropSemanticNonInterference & GenNaiveLonger & IfcBugPushNoTaint & 3.614 & 32436 & 1.000 & 2443
+PropSemanticNonInterference & GenNaiveLonger & IfcBugLoadNoTaint & 82.508 & 755177 & 0.067 & 82
+PropSemanticNonInterference & GenNaiveLonger & IfcBugStoreNoTaint & 74.714 & 702737 & 0.233 & 479
+PropSemanticNonInterference & GenNaiveLonger & IfcBugAllowWriteDownThroughHighPtr & 17.209 & 158844 & 1.000 & 1789
+
+PropLowLockStep & GenNaiveLonger & IfcBugAddNoTaint & 0.127 & 390 & 1.000 & 2619
+PropLowLockStep & GenNaiveLonger & IfcBugPushNoTaint & 0.010 & 14 & 1.000 & 1656
+PropLowLockStep & GenNaiveLonger & IfcBugLoadNoTaint & 8.130 & 50433 & 1.000 & 1862
+PropLowLockStep & GenNaiveLonger & IfcBugStoreNoTaint & 93.870 & 599282 & 0.400 & 806
+PropLowLockStep & GenNaiveLonger & IfcBugAllowWriteDownThroughHighPtr & 12.126 & 78265 & 1.000 & 2027
+
+PropSemanticNonInterference & GenNaiveWeighted & IfcBugAddNoTaint & 0.447 & 977 & 1.000 & 2987
+PropSemanticNonInterference & GenNaiveWeighted & IfcBugPushNoTaint & 0.231 & 175 & 1.000 & 3281
+PropSemanticNonInterference & GenNaiveWeighted & IfcBugLoadNoTaint & 101.886 & 505543 & 0.700 & 1470
+PropSemanticNonInterference & GenNaiveWeighted & IfcBugStoreNoTaint & 82.270 & 407128 & 0.833 & 1843
+PropSemanticNonInterference & GenNaiveWeighted & IfcBugAllowWriteDownThroughHighPtr & 2.706 & 12466 & 1.000 & 1981
+
+PropLowLockStep & GenNaiveWeighted & IfcBugAddNoTaint & 0.073 & 16 & 1.000 & 2007
+PropLowLockStep & GenNaiveWeighted & IfcBugPushNoTaint & 0.019 & 4 & 1.000 & 1533
+PropLowLockStep & GenNaiveWeighted & IfcBugLoadNoTaint & 2.925 & 8134 & 1.000 & 2032
+PropLowLockStep & GenNaiveWeighted & IfcBugStoreNoTaint & 83.037 & 255989 & 0.900 & 1807
+PropLowLockStep & GenNaiveWeighted & IfcBugAllowWriteDownThroughHighPtr & 3.965 & 10953 & 1.000 & 1949
+
+PropSemanticNonInterference & GenByExec & IfcBugAddNoTaint & 0.438 & 13 & 1.000 & 2208
+PropSemanticNonInterference & GenByExec & IfcBugPushNoTaint & 0.268 & 5 & 1.000 & 2119
+PropSemanticNonInterference & GenByExec & IfcBugLoadNoTaint & 8.595 & 1810 & 1.000 & 2448
+PropSemanticNonInterference & GenByExec & IfcBugStoreNoTaint & 22.729 & 6242 & 1.000 & 2320
+PropSemanticNonInterference & GenByExec & IfcBugAllowWriteDownThroughHighPtr & 0.901 & 151 & 1.000 & 2153
+
+PropLowLockStep & GenByExec & IfcBugAddNoTaint & 0.177 & 2 & 1.000 & 2153
+PropLowLockStep & GenByExec & IfcBugPushNoTaint & 0.138 & 1 & 1.000 & 2313
+PropLowLockStep & GenByExec & IfcBugLoadNoTaint & 1.425 & 244 & 1.000 & 2283
+PropLowLockStep & GenByExec & IfcBugStoreNoTaint & 25.067 & 6714 & 1.000 & 2130
+PropLowLockStep & GenByExec & IfcBugAllowWriteDownThroughHighPtr & 1.249 & 170 & 1.000 & 2201
+
+Nonempty now
+ghc --make -main-is TMUDriver -O2 -Werror -fwarn-unused-imports -fwarn-missing-signatures -fwarn-unused-do-bind -fwarn-incomplete-patterns -fwarn-tabs -i..//common   TMUDriver.hs
+
+PropSemanticNonInterference & GenNaive & IfcBugAddNoTaint & 0.402 & 651 & 1.000 & 4935
+PropSemanticNonInterference & GenNaive & IfcBugPushNoTaint & 1.030 & 4613 & 1.000 & 2332
+PropSemanticNonInterference & GenNaive & IfcBugLoadNoTaint & 94.623 & 499750 & 0.733 & 1175
+PropSemanticNonInterference & GenNaive & IfcBugStoreNoTaint & 18.252 & 91379 & 1.000 & 1535
+PropSemanticNonInterference & GenNaive & IfcBugAllowWriteDownThroughHighPtr & 1.590 & 6155 & 1.000 & 1407
+
+PropLowLockStep & GenNaive & IfcBugAddNoTaint & 0.029 & 8 & 1.000 & 1817
+PropLowLockStep & GenNaive & IfcBugPushNoTaint & 0.013 & 13 & 1.000 & 1247
+PropLowLockStep & GenNaive & IfcBugLoadNoTaint & 1.950 & 4697 & 1.000 & 1383
+PropLowLockStep & GenNaive & IfcBugStoreNoTaint & 35.517 & 108781 & 1.000 & 1549
+PropLowLockStep & GenNaive & IfcBugAllowWriteDownThroughHighPtr & 1.366 & 4107 & 1.000 & 1402
+
+PropSemanticNonInterference & GenNaiveLonger & IfcBugAddNoTaint & 0.492 & 519 & 1.000 & 4732
+PropSemanticNonInterference & GenNaiveLonger & IfcBugPushNoTaint & 0.997 & 4053 & 1.000 & 2939
+PropSemanticNonInterference & GenNaiveLonger & IfcBugLoadNoTaint & 82.254 & 395836 & 0.733 & 1618
+PropSemanticNonInterference & GenNaiveLonger & IfcBugStoreNoTaint & 18.769 & 79847 & 1.000 & 3155
+PropSemanticNonInterference & GenNaiveLonger & IfcBugAllowWriteDownThroughHighPtr & 0.910 & 3891 & 1.000 & 2216
+
+PropLowLockStep & GenNaiveLonger & IfcBugAddNoTaint & 0.026 & 8 & 1.000 & 2530
+PropLowLockStep & GenNaiveLonger & IfcBugPushNoTaint & 0.022 & 13 & 1.000 & 1913
+PropLowLockStep & GenNaiveLonger & IfcBugLoadNoTaint & 1.259 & 2570 & 1.000 & 2255
+PropLowLockStep & GenNaiveLonger & IfcBugStoreNoTaint & 36.031 & 104771 & 1.000 & 2228
+PropLowLockStep & GenNaiveLonger & IfcBugAllowWriteDownThroughHighPtr & 2.029 & 2870 & 1.000 & 2519
+
+PropSemanticNonInterference & GenNaiveWeighted & IfcBugAddNoTaint & 0.485 & 323 & 1.000 & 5212
+PropSemanticNonInterference & GenNaiveWeighted & IfcBugPushNoTaint & 0.235 & 143 & 1.000 & 3501
+PropSemanticNonInterference & GenNaiveWeighted & IfcBugLoadNoTaint & 82.775 & 295279 & 0.900 & 2064
+PropSemanticNonInterference & GenNaiveWeighted & IfcBugStoreNoTaint & 52.375 & 190357 & 1.000 & 1981
+PropSemanticNonInterference & GenNaiveWeighted & IfcBugAllowWriteDownThroughHighPtr & 1.571 & 5090 & 1.000 & 2367
+
+PropLowLockStep & GenNaiveWeighted & IfcBugAddNoTaint & 0.073 & 5 & 1.000 & 2379
+PropLowLockStep & GenNaiveWeighted & IfcBugPushNoTaint & 0.031 & 3 & 1.000 & 1805
+PropLowLockStep & GenNaiveWeighted & IfcBugLoadNoTaint & 1.689 & 2778 & 1.000 & 2148
+PropLowLockStep & GenNaiveWeighted & IfcBugStoreNoTaint & 70.714 & 143963 & 1.000 & 2094
+PropLowLockStep & GenNaiveWeighted & IfcBugAllowWriteDownThroughHighPtr & 2.644 & 4590 & 1.000 & 2246
+
+PropSemanticNonInterference & GenByExec & IfcBugAddNoTaint & 0.547 & 10 & 1.000 & 2717
+PropSemanticNonInterference & GenByExec & IfcBugPushNoTaint & 0.320 & 4 & 1.000 & 2558
+PropSemanticNonInterference & GenByExec & IfcBugLoadNoTaint & 10.666 & 2617 & 1.000 & 2492
+PropSemanticNonInterference & GenByExec & IfcBugStoreNoTaint & 23.227 & 6094 & 1.000 & 2263
+PropSemanticNonInterference & GenByExec & IfcBugAllowWriteDownThroughHighPtr & 1.060 & 179 & 1.000 & 2297
+
+PropLowLockStep & GenByExec & IfcBugAddNoTaint & 0.359 & 1 & 1.000 & 2944
+PropLowLockStep & GenByExec & IfcBugPushNoTaint & 0.152 & 1 & 1.000 & 2833
+PropLowLockStep & GenByExec & IfcBugLoadNoTaint & 1.789 & 328 & 1.000 & 2465
+PropLowLockStep & GenByExec & IfcBugStoreNoTaint & 20.675 & 5593 & 1.000 & 2432
+PropLowLockStep & GenByExec & IfcBugAllowWriteDownThroughHighPtr & 1.397 & 173 & 1.000 & 2377
+
+
+Older run on a different machine with -j4
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+PropSemanticNonInterference & GenNaive & IfcBugAddNoTaint & 0.321 & 459 & 1.000 & 4502
+PropLowLockStep & GenNaive & IfcBugAddNoTaint & 0.031 & 8 & 1.000 & 1337
+PropSemanticNonInterference & GenNaiveLonger & IfcBugAddNoTaint & 0.355 & 350 & 1.000 & 4917
+PropLowLockStep & GenNaiveLonger & IfcBugAddNoTaint & 0.034 & 6 & 1.000 & 2441
+PropSemanticNonInterference & GenNaiveLonger & IfcBugPushNoTaint & 0.857 & 3477 & 1.000 & 3308
+PropLowLockStep & GenNaiveLonger & IfcBugPushNoTaint & 0.019 & 12 & 1.000 & 1874
+PropSemanticNonInterference & GenNaive & IfcBugAllowWriteDownThroughHighPtr & 1.068 & 4144 & 1.000 & 1408
+PropSemanticNonInterference & GenNaive & IfcBugPushNoTaint & 1.075 & 4099 & 1.000 & 3319
+PropLowLockStep & GenNaive & IfcBugPushNoTaint & 0.019 & 13 & 1.000 & 1030
+PropSemanticNonInterference & GenNaiveWeighted & IfcBugPushNoTaint & 0.224 & 81 & 1.000 & 3452
+PropLowLockStep & GenNaiveWeighted & IfcBugPushNoTaint & 0.032 & 3 & 1.000 & 1991
+PropSemanticNonInterference & GenNaiveWeighted & IfcBugAddNoTaint & 0.497 & 245 & 1.000 & 5421
+PropLowLockStep & GenNaiveWeighted & IfcBugAddNoTaint & 0.078 & 7 & 1.000 & 2601
+PropSemanticNonInterference & GenNaiveLonger & IfcBugAllowWriteDownThroughHighPtr & 1.118 & 2701 & 1.000 & 2419
+PropLowLockStep & GenNaiveLonger & IfcBugAllowWriteDownThroughHighPtr & 1.632 & 2888 & 1.000 & 2438
+PropLowLockStep & GenNaive & IfcBugAllowWriteDownThroughHighPtr & 2.239 & 3903 & 1.000 & 1519
+PropSemanticNonInterference & GenByExec & IfcBugAddNoTaint & 0.260 & 9 & 1.000 & 2299
+PropLowLockStep & GenByExec & IfcBugAddNoTaint & 0.366 & 1 & 1.000 & 3129
+PropSemanticNonInterference & GenByExec & IfcBugPushNoTaint & 0.297 & 4 & 1.000 & 2252
+PropLowLockStep & GenByExec & IfcBugPushNoTaint & 0.106 & 1 & 1.000 & 2498
+PropSemanticNonInterference & GenNaiveWeighted & IfcBugAllowWriteDownThroughHighPtr & 1.299 & 3917 & 1.000 & 2194
+PropLowLockStep & GenNaiveWeighted & IfcBugAllowWriteDownThroughHighPtr & 1.885 & 3127 & 1.000 & 2272
+PropSemanticNonInterference & GenByExec & IfcBugLoadNoTaint & 8.275 & 2174 & 1.000 & 2540
+PropLowLockStep & GenByExec & IfcBugLoadNoTaint & 1.981 & 393 & 1.000 & 2624
+PropSemanticNonInterference & GenByExec & IfcBugAllowWriteDownThroughHighPtr & 1.577 & 296 & 1.000 & 2486
+PropLowLockStep & GenByExec & IfcBugAllowWriteDownThroughHighPtr & 1.111 & 168 & 1.000 & 2433
+PropSemanticNonInterference & GenNaiveLonger & IfcBugStoreNoTaint & 17.690 & 82361 & 1.000 & 2108
+PropSemanticNonInterference & GenNaive & IfcBugStoreNoTaint & 25.144 & 118458 & 1.000 & 1426
+PropSemanticNonInterference & GenNaiveWeighted & IfcBugStoreNoTaint & 25.186 & 84469 & 1.000 & 2059
+PropSemanticNonInterference & GenByExec & IfcBugStoreNoTaint & 21.956 & 6121 & 1.000 & 2278
+PropLowLockStep & GenNaiveLonger & IfcBugStoreNoTaint & 21.959 & 62145 & 1.000 & 2072
+PropLowLockStep & GenByExec & IfcBugStoreNoTaint & 15.739 & 4135 & 1.000 & 2356
+PropSemanticNonInterference & GenNaiveLonger & IfcBugLoadNoTaint & 46.918 & 219074 & 0.933 & 2029
+PropLowLockStep & GenNaiveLonger & IfcBugLoadNoTaint & 1.246 & 2380 & 1.000 & 2177
+PropLowLockStep & GenNaive & IfcBugStoreNoTaint & 28.121 & 85464 & 1.000 & 1395
+PropSemanticNonInterference & GenNaiveWeighted & IfcBugLoadNoTaint & 65.683 & 207509 & 1.000 & 2431
+PropLowLockStep & GenNaiveWeighted & IfcBugLoadNoTaint & 1.814 & 2776 & 1.000 & 2345
+PropLowLockStep & GenNaiveWeighted & IfcBugStoreNoTaint & 44.658 & 85290 & 1.000 & 2215
+PropSemanticNonInterference & GenNaive & IfcBugLoadNoTaint & 76.352 & 367638 & 0.833 & 1243
+PropLowLockStep & GenNaive & IfcBugLoadNoTaint & 1.167 & 3750 & 1.000 & 1352
+

@@ -1,0 +1,3 @@
+:def setup-flags \dir -> fmap (":set " ++) $ System.Process.readProcess "make" ["-f", dir ++ "/Makefile.common", "print-common-ghc-opts"] ""
+:set -XImplicitParams
+:set -i../common
