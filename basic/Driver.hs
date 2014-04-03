@@ -4,12 +4,12 @@
 module Driver where
 
 import Test.QuickCheck
+import Test.QuickCheck.Random
 
 import Control.Monad
 import Control.Applicative
 import Control.Arrow()
 import Data.List (genericLength, unzip4)
-import System.Random
 
 import System.Console.CmdArgs
 import Text.Printf
@@ -43,7 +43,7 @@ show_some_testcases :: Int -> IO ()
 show_some_testcases n
   = do { flags <- cmdArgs (dynFlagsDflt)
        ; let ?dfs = flags
-       ; gen <- newStdGen
+       ; gen <- newQCGen
        ; when (latex_output getFlags) (putStr "% ") >> print gen
        
        ; quickCheckWith stdArgs { maxSuccess = n
