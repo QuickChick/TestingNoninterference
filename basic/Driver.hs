@@ -41,7 +41,7 @@ instance (?dfs :: DynFlags) => Flaggy TMUDriver where
 
 show_some_testcases :: Int -> IO ()
 show_some_testcases n
-  = do { flags <- cmdArgs (dynFlagsDflt)
+  = do { flags <- cmdArgs dynFlagsDflt
        ; let ?dfs = flags
        ; gen <- newQCGen
        ; when (latex_output getFlags) (putStr "% ") >> print gen
@@ -65,7 +65,7 @@ main = do { flags <- cmdArgs dynFlagsDflt
           let double                        = fromRational :: Rational -> Double
               fins                          = catMaybes xs
               n                             = genericLength fins
-              isInfinity                    = any (== Nothing) xs
+              isInfinity                    = elem Nothing xs
               arithmetic | isInfinity       = Nothing
                          | n == 0           = Nothing
                          | otherwise        = Just $ double $ sum fins / n
@@ -84,10 +84,11 @@ main = do { flags <- cmdArgs dynFlagsDflt
              
         do_strategy f (s :: GenStrategy)
           = do when (run_timeout_tests f) $
-                 if print_all_datapoints f then
-                   putStrLn "% Format = time to find bug in milli seconds."
-                 else
-                   putStrLn "% Format = bug & #tests/sec & discard ratio & mean time to failure"
+                 putStrLn $
+                   if print_all_datapoints f then
+                     "% Format = time to find bug in milli seconds."
+                   else
+                     "% Format = bug & #tests/sec & discard ratio & mean time to failure"
                (success',speeds,discRates,allBugsPerSecs) <-
                  unzip4 <$>
                  if run_timeout_tests f 
@@ -152,7 +153,7 @@ main = do { flags <- cmdArgs dynFlagsDflt
           = let bugs_per_sec c =
                   let (s::String) = printf "%0.3f" ( fromIntegral (bugs_c c)
                                                    / fromIntegral (timeout f) :: Double)
-                  in s ++ (extrap_info (extrapolated c))
+                  in s ++ extrap_info (extrapolated c)
                      
                 -- Compute MTTF in ms
                 mean_time_to_failure_stats :: TestCounters -> (Maybe Rational, Maybe Rational)
@@ -200,7 +201,7 @@ main = do { flags <- cmdArgs dynFlagsDflt
                                     -- v yields a 95% confidence interval of the form 
                                     -- [m-1.96sqrt(v),m+1.96sqrt(v)]
                                     let varAvg = fromRational var / fromIntegral (bugs_c counters) :: Double in
-                                    printf "%0.2f" (1.96 * (sqrt varAvg))
+                                    printf "%0.2f" $ 1.96 * sqrt varAvg
                                   Nothing -> "---"
                ; if print_all_datapoints f then do
                    putStrLn ("% " ++ show b)
@@ -214,13 +215,13 @@ main = do { flags <- cmdArgs dynFlagsDflt
                                (bugs_c counters)
                                varStr
                                acc95Str
-               ; return $ (True, gen_speed,
-                                 disc_rate,
-                                 mttf)
+               ; return (True, gen_speed,
+                               disc_rate,
+                               mttf)
                }
             
         strategies flags = [gen_strategy flags]
-        ifcsem flags     = readIfcSemanticsList flags
+        ifcsem           = readIfcSemanticsList
 
         action :: DynFlags -> IO TestCounters
         action flags = let ?dfs = flags in checkTimeoutProperty

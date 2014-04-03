@@ -1,5 +1,5 @@
-{-# LANGUAGE ImplicitParams, FlexibleContexts, UndecidableInstances,
-    RecordWildCards, TupleSections #-}
+{-# LANGUAGE FlexibleContexts, UndecidableInstances, RecordWildCards,
+    TupleSections #-}
 
 module Generation where
 
@@ -8,7 +8,7 @@ import Test.QuickCheck
 import Control.Monad
 import Control.Applicative
 import Data.Maybe
-import Data.List ( find )
+import Data.List ( find, isInfixOf )
 
 import Util
 import GenericMachine
@@ -19,7 +19,7 @@ import Instr
 
 import Machine
 
-import Data.List ( isInfixOf )
+-- TODO: The amount of duplication in this file is amazing
 
 -- import Debug.Trace
 
@@ -130,9 +130,9 @@ genSequence = do
   aimem <- genInstrMem 0 [] aimemSize
   (astk,apcl) <- case starting_as getFlags of
        StartInitial      -> liftA2 (,) (pure []) (pure L)
-       StartQuasiInitial -> liftA2 (,) (listOf $ AData <$> (labeled $ gInt)) (pure L)
+       StartQuasiInitial -> liftA2 (,) (listOf $ AData <$> labeled gInt) (pure L)
        StartArbitrary    -> arbitrary
-  return $ AS {apc = Labeled apcl 0, ..}
+  return AS {apc = Labeled apcl 0, ..}
 
 -- Here somebody has just repeated the frequency table for ainstr with
 -- no extra cleverness! TODO: try to share these tables
@@ -161,7 +161,7 @@ mkWeighted w = do
   (mem,stk,pc) <- initAS aimemSize
   let amemSize = length mem
   imem <- mapM (const $ genWeightedInstr w (smartInt aimemSize amemSize)) [0..aimemSize-1]
-  return $ AS { apc = pc, amem = mem, astk = stk, aimem = imem }
+  return AS { apc = pc, amem = mem, astk = stk, aimem = imem }
 
 {-   
   aimemSize <- choose $ gen_instrs_range getFlags
@@ -237,7 +237,7 @@ genNaiveInstrOnly :: Flaggy DynFlags => Gen AS
 genNaiveInstrOnly
   = do { aimem_size      <- choose (gen_instrs_range getFlags)
        ; (amem,astk,apc) <- initAS aimem_size
-       ; aimem <- sequence $ replicate aimem_size arbitrary
+       ; aimem <- replicateM aimem_size arbitrary
        ; return AS{..} }
 
 initMem :: Gen [Atom]
@@ -282,7 +282,7 @@ stkMem n -- imem size
        ; astk_init <-
               listOf $ frequency $
               [ (5, fmap AData (labeled $ smartIntWeighted (1,1,4) n amemSize)) ] ++ 
-              [ (1, fmap ARet  (labeled $ aret_rand_pair)) | callsAllowed (gen_instrs getFlags) ] 
+              [ (1, fmap ARet  (labeled aret_rand_pair)) | callsAllowed (gen_instrs getFlags) ] 
        ; return (amem_init, astk_init) }
   where aret_rand_pair = liftA2 (,) (genValidIAddr n) arbitrary
 
@@ -571,7 +571,7 @@ genByExecAllBranchesFwd
                     _        -> Nothing
                   as_next = astepFn as 
                   jmpTbl' = case jump of
-                              Just pc | pc > (value $ apc as) -> (pc,as_next):jmpTbl
+                              Just pc | pc > value (apc as) -> (pc,as_next):jmpTbl
                               _ -> jmpTbl
                in go (_c+1) r jmpTbl' (as_next { apc = apc as + 1 }) istream
             else
@@ -647,7 +647,7 @@ genByExecAllBranchesFwd2
                     _        -> Nothing
                   as_next = astepFn as 
                   jmpTbl' = case jump of
-                              Just pc | pc > (value $ apc as)
+                              Just pc | pc > value (apc as)
                                       , not tainted -- Add to fwd table if not tainted
                                       -> (pc,as_next):jmpTbl
                               _ -> jmpTbl
@@ -708,7 +708,7 @@ genByExecAllBranchesFwd3
           = return $ aimem as
           | Execute n <- execute
           , n > 0
-          , instr <- (aimem as) !! iptr
+          , instr <- aimem as !! iptr
           = -- trace "foo" $
             if as_better /= as then go (Execute 0) tainted jmpTbl as
             else
@@ -885,10 +885,10 @@ ainstr imem_size slack as@(AS{amem=mem, astk=stk}) halt_weight =
     if slack <= 1 then [] else
 --    if length (aimem as) + 1  then [] else
     [ (40, pure Add) | nstk >= 2 ] ++
-    [ (300, Push <$> (labeled $ smartInt imem_size $ length mem)) ] ++
+    [ (300, Push <$> labeled (smartInt imem_size $ length mem)) ] ++
     [ (40, pure Pop) |
       if IfcBugPopPopsReturns `elem` ifc_semantics_singleton getFlags 
-        then length stk >= 1
+        then not (null stk)
         else nstk >= 1 ] ++
     [ (60, pure Store) | nstk >= 2
                        , vtop `isIndex` mem
@@ -896,15 +896,14 @@ ainstr imem_size slack as@(AS{amem=mem, astk=stk}) halt_weight =
                        ] ++
     [ (60, pure Load) | nstk >= 1
                       , vtop `isIndex` mem ] ++
-    [ (40, liftM Return arbitrary) | Just r <- [ fmap astkReturns $
+    [ (40, liftM Return arbitrary) | Just r <- [ astkReturns <$>
                                                  find (not . isAData) stk]
                                    , nstk >= if r then 1 else 0 
                                    , cally ]
   where
 
     halt_extra_weight
-      | (prop == PropEENI) ||
-             (prop == PropJustProfile) || (prop == PropJustProfileVariation)
+      |prop `elem` [PropEENI, PropJustProfile, PropJustProfileVariation]
       = halt_weight * 10
       | otherwise = 0
     
@@ -944,7 +943,7 @@ ainstrs imem_size slack as@(AS{amem = mem, astk = stk}) halt_weight =
     -- if length (aimem as) + 2 >= imem then [] else
     [ (1, pushAndDo Load  <$> labeled maddr) | not (null mem) ] ++
 
-    [ (3, pushAndStoreChecked as) | not (null mem), length stk >= 1 ] ++
+    [ (3, pushAndStoreChecked as) | not (null mem), not (null stk) ] ++
 
 -- Used to be:
 --    [ (2, pushAndDo Store <$> labeled maddr) | not (null mem)
@@ -958,14 +957,14 @@ ainstrs imem_size slack as@(AS{amem = mem, astk = stk}) halt_weight =
     iaddr = if smart_ints getFlags
             then imem_size `upfrom` 0
             else int
-    maddr = frequency $
-            [ (1, (length mem `upfrom` 0))
+    maddr = frequency
+            [ (1, length mem `upfrom` 0)
 -- DV: used to be like this 
 -- but this is a bug: min associates to the 
 -- left so if the length of the memory is e.g 1
 -- we get out of address violations ...  
 --          , (9, ((length mem `min` 0+2) `upfrom` 0)) 
-            , (9, ((length mem `min` 3) `upfrom` 0))
+            , (9, (length mem `min` 3) `upfrom` 0)
             -- Instead I will just reuse very often the first three memory locations
             ]
             -- ensure we reuse locations often
@@ -977,7 +976,7 @@ ainstrs imem_size slack as@(AS{amem = mem, astk = stk}) halt_weight =
             = take 3 [0 .. (0 + length (amem as) - 1)] 
           goodA a = wfChecks $ instrChecks Store (astepInstr as (Push a))
           good_maddrs w l =
-            let vls = filter (\n -> is_wf $ goodA (Labeled l n)) all_addresses
+            let vls = filter (is_wf . goodA . Labeled l) all_addresses
             in if vls == empty then []
                else [(w, elements (map (Labeled l) vls))]
           push_maddr = frequency $
@@ -1017,9 +1016,9 @@ Specialized generation for single-step noninterference.
 genTinySSNI :: Flaggy DynFlags => Gen AS
 genTinySSNI
   | StartArbitrary <- starting_as getFlags
-  = do { amem  <- mapM (\_ -> arbitrary) [0..2]
-       ; astkSize <- frequency $ [(x,return x) | x <- [1..15] ]
-       ; astk  <- mapM (\_ -> oneof [arbitrary, AData <$> (labeled genDataPtr)])
+  = do { amem  <- mapM (const arbitrary) [0..2]
+       ; astkSize <- frequency [(x,return x) | x <- [1..15] ]
+       ; astk  <- mapM (\_ -> oneof [arbitrary, AData <$> labeled genDataPtr])
                   [0..(astkSize-1)]
          -- making sure there is at least one return address on the stack
        ; extraRet <- frequency [(10, liftM (\x->[x]) (ARet <$> arbitrary)),
@@ -1062,7 +1061,7 @@ ainstr' as@(AS{amem=mem, astk=stk}) =
     [ (10, pure Add) | nstk >= 2 ] ++
     [ (10, Push <$> lint) ] ++
     [ (10, pure Pop) | if IfcBugPopPopsReturns `elem` ifc_semantics_singleton getFlags 
-                         then length stk >= 1
+                         then not (null stk)
                          else nstk >= 1 ] ++
     [ (20, pure Store) | nstk >= 2
                        , vtop `isIndex` mem ] ++
@@ -1071,7 +1070,7 @@ ainstr' as@(AS{amem=mem, astk=stk}) =
     [ (10, liftM2 Call (choose (0, (nstk-1) `min` maxArgs)) arbitrary)
                          | nstk >= 1
                          , cally ] ++
-    [ (20, liftM Return arbitrary) | Just r <- [ fmap astkReturns $
+    [ (20, liftM Return arbitrary) | Just r <- [ astkReturns <$>
                                                 find (not . isAData) stk]
                                    , nstk >= if r then 1 else 0 
                                    , cally ] ++

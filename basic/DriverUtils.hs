@@ -1,5 +1,5 @@
-{-# LANGUAGE ImplicitParams, FlexibleContexts, UndecidableInstances,
-    RecordWildCards, TupleSections, ScopedTypeVariables, NamedFieldPuns #-}
+{-# LANGUAGE FlexibleContexts, UndecidableInstances, RecordWildCards,
+    TupleSections, ScopedTypeVariables, NamedFieldPuns #-}
 
 module DriverUtils where
 
@@ -93,12 +93,12 @@ gen_prop_noninterference observe compare
            -- instruction stream
            fromIntegral (100 * length (nub (map (value . apc) ass))) /
                                        fromIntegral (length (aimem as))
-       noops_executed ass =
+       noops_executed =
            foldr (\x s -> if isWF x then
-                            case aimem x !! (value $ apc x) of
+                            case aimem x !! value (apc x) of
                               Noop -> s + 1
                               _    -> s
-                          else s) 0 ass
+                          else s) 0
 
 printPlain :: Flaggy DynFlags => AS -> AS -> [AS] -> [AS] -> IO ()
 printPlain as as' ass ass' = do
@@ -186,7 +186,7 @@ printLaTeX as as' ass ass' = do
                                       ++ toLaTeX instr ++ "}"
                        (False, False) -> "\\mathord{-}"
 
-  let printMachine name mach = when (not $ null mach) $ do
+  let printMachine name mach = unless (null mach) $ do
         putStrLn "  \\midrule"
         putStrLn $  "  \\multicolumn{4}{l}{Machine "
                  ++ name ++ " continues\\ldots} \\\\"
@@ -253,7 +253,7 @@ prop_end_to_end_aux break =
                    | let iptr = value apc
                    , iptr `isIndex` aimem
                    , Halt <- aimem !! iptr
-                   = if break then True else lab apc == L
+                   = break || (lab apc == L)
                    | otherwise
                    = False
          compare (ass1,m1) (ass2,m2)
@@ -265,7 +265,7 @@ prop_end_to_end_aux break =
            = collect "Both halt in L" $
              as1 ~~~ as2
          compare' _ _
-           = (False ==> True)
+           = False ==> True
 -- Uncomment lines above and below to collect info to debug discards
 --         compare' _ _ =  property True
             -- collect "At least one doesn't halt in L" True
@@ -288,8 +288,8 @@ prop_single_step (Smart _ (Shrink2 (Variation as1 as2))) =
     let collect s = id in
     whenFail (when (show_counterexamples getFlags) $
               (if latex_output getFlags then printLaTeX else printPlain)
-                as1 as2 ([as1] ++ maybeToList mas1')
-                        ([as2] ++ maybeToList mas2')) $
+                as1 as2 (as1 : maybeToList mas1')
+                        (as2 : maybeToList mas2')) $
     case lab $ apc as1 of
       L -> case (mas1', mas2') of
              (Just as1', Just as2') -> collect "L ->  _" $ property $ as1' ~~~ as2'
@@ -307,10 +307,10 @@ prop_single_step (Smart _ (Shrink2 (Variation as1 as2))) =
              Nothing   -> abandon
   where xs ? i | 0 <= i && i < length xs = Just $ xs !! i
                | otherwise               = Nothing
-        successful as@AS{..} = (aimem ? (value apc)) == Just Halt
+        successful as@AS{..} = (aimem ? value apc) == Just Halt
         step' as | isWF as   = Just <$> step as
                  | otherwise = pure Nothing
-        abandon = (False ==> True) 
+        abandon = False ==> True
 
 
 {----- Main -----}
@@ -322,7 +322,7 @@ prop_single_step (Smart _ (Shrink2 (Variation as1 as2))) =
 profileTests :: Flaggy DynFlags
              => IO ()
 profileTests
-  = do { putStrLn $ "% Profiling"
+  = do { putStrLn "% Profiling"
        ; clear
        ; gen <- newQCGen
        ; r <- quickCheckWithResult stdArgs { maxSuccess = 30000 -- Big enough for profiling
@@ -350,7 +350,7 @@ profileTests
                  ; putStrLn "\\fi%"
                  }
          else
-           putStrLn $ show (labels r)
+           print (labels r)
 
        }
   where
@@ -372,7 +372,7 @@ isHaltingAS as@AS{..}
 
 profileVariations :: Flaggy DynFlags => IO ()
 profileVariations
-  = do { putStrLn $ "% Profiling variations"
+  = do { putStrLn "% Profiling variations"
        ; clear
        ; gen <- newQCGen
        ; r <- quickCheckWithResult stdArgs { maxSuccess = 30000
@@ -382,7 +382,7 @@ profileVariations
          then
             print_nicely r
          else
-            putStrLn (show r) 
+            print r 
          -- then do { putStrLn "\\begin{tabular}{rl}"
          --         ; let ls = filter (\(l,n) -> n > 0) $
          --                    sortBy (\(l,n) (l',n') -> compare n' n) (labels r)
@@ -429,7 +429,7 @@ profileVariations
             record2 (length ass1, length ass2) $ -- Record steps
             compare' (length ass1) (length ass2) m1 m2
       compare' l1 l2 (Just as1) (Just as2)
-        = record2' (l1,l2) $ True -- Record low-halting steps
+        = record2' (l1,l2) True -- Record low-halting steps
       compare' _ _ _ _ = True
   
       show_wf_nicely WF = "well-formed"
@@ -481,24 +481,23 @@ checkProperty discard_ref pr microsecs
          ; end <- getCPUTime
                        
          ; when is_chatty $
-           do { case r of
+                case r of
                   Nothing              -> putStrLn "Timeout"
                   Just (Success {})    -> putStrLn "Success"
                   Just (GaveUp {})     -> putStrLn "Gave up"
                   Just (NoExpectedFailure {}) -> putStrLn "No expected failure"
-                  Just (Failure { reason = r }) | isInfixOf "timeout" r -> 
+                  Just (Failure { reason = r }) | "timeout" `isInfixOf` r -> 
                        putStrLn "Timeout (caught by QC)" 
                   Just (Failure { numTests = nt, numShrinks = ns })
                       -> do when is_latex $ putStr "% "
                             putStrLn $ "*** Falsifiable, numTests = " ++ show nt ++
                                      ", numShrinks = " ++ show ns
-              }
          ; let diff = round ((fromIntegral (end - start) / 10^6) :: Double)
          ; real_tests_run <- readIORef tests_run
          ; let res = case r of
                  Nothing -> Left real_tests_run -- if the exception propagated up
                  Just (Failure { reason = r})
-                   | isInfixOf "timeout" r -> Left real_tests_run -- if the exception caught by QC 
+                   | "timeout" `isInfixOf` r -> Left real_tests_run -- if the exception caught by QC 
                  Just r  -> Right r
          ; return (res, diff)
          }
@@ -507,7 +506,7 @@ checkProperty discard_ref pr microsecs
        discard_cb tests_run
          = QCProp.PostTest
                      QCProp.NotCounterexample $ \MkState{numDiscardedTests = dn, numSuccessTests= sn} _ ->
-                     modifyIORef discard_ref (\_ -> dn) >> modifyIORef tests_run (\_ -> sn)
+                     modifyIORef discard_ref (const dn) >> modifyIORef tests_run (const sn)
 
 data TestCounters 
   = TestCounters { run_c            :: Int
@@ -562,9 +561,9 @@ checkTimeoutProperty
                        -> return (counters { run_c  = run_c counters + numTests
                                            , disc_c = disc_c counters + real_discards })
                     Right (Failure { numTests, reason })
-                       | isInfixOf "Exception" reason
+                       | "Exception" `isInfixOf` reason
                        -> putStrLn ("Exception while testing!?: " ++ reason) >> error "Bailing out!"
-                       | isInfixOf "Falsifiable" reason -- Bug found
+                       | "Falsifiable" `isInfixOf` reason -- Bug found
                        -> let counters' = counters { run_c = run_c counters + numTests
                                                    , bugs_c = bugs_c counters + 1 
                                                    , disc_c = disc_c counters + real_discards

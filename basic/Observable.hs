@@ -1,4 +1,4 @@
-{-# LANGUAGE ImplicitParams, FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module Observable where
 
@@ -35,7 +35,7 @@ instance (Eq a, LaTeX a) => LaTeX (Variation a) where
                          (tsop, sx', sy') = (commonL False `on` reverse) xs' ys'
                      in (pre, reverse sx', reverse sy', reverse tsop)
 
-commonL :: Bool -> [Char] -> [Char] -> ([Char], [Char], [Char])
+commonL :: Bool -> String -> String -> (String, String, String)
 commonL checkBackslash = common'
   where common' xs     []                 = ([],xs,[])
         common' []     ys                 = ([],[],ys)
@@ -171,7 +171,7 @@ prop_observable_refl  a = a ~~~ a
 prop_observable_sym   a = forAll (vary a) $ \b -> (a ~~~ b) && (b ~~~ a)
 prop_observable_trans a = forAll (vary a) $ \b ->
                           forAll (vary b) $ \c ->
-                            (a ~~~ c)
+                            a ~~~ c
 
 prop_observable :: (Show a, Observable a) => a -> Property
 prop_observable a = 

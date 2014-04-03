@@ -1,5 +1,5 @@
-{-# LANGUAGE ImplicitParams, FlexibleContexts, UndecidableInstances,
-    RecordWildCards, TupleSections, MonoLocalBinds #-}
+{-# LANGUAGE FlexibleContexts, UndecidableInstances, RecordWildCards,
+    TupleSections, MonoLocalBinds #-}
 
 module Machine where
 
@@ -284,8 +284,8 @@ astepInstr as@AS{..} is =
             | bugStoreNoValueTaint = Labeled L (value (astkData b))
             | bugStoreNoPointerTaint && bugStoreNoPcTaint = astkData b
             | bugStoreNoPointerTaint = apc `tainting` astkData b
-            | bugStoreNoPcTaint = astkData a `tainting` (astkData b)
-            | otherwise = apc `tainting` astkData a `tainting` (astkData b)
+            | bugStoreNoPcTaint = astkData a `tainting` astkData b
+            | otherwise = apc `tainting` astkData a `tainting` astkData b
 
           oldContents = amem !! astkValue a
           newContents = if variantWriteDownAsNoop
@@ -293,8 +293,8 @@ astepInstr as@AS{..} is =
                         -- check be turned into a a single "meta-flag"
                         -- that would be checked in instr_checks?  CH:
                         -- no, this check failing doesn't stop the machine
-                           && not (lab apc `lub` lab (astkData a)
-                                   <= lab oldContents)
+                           && (lab apc `lub` lab (astkData a)
+                               > lab oldContents)
                           then oldContents
                           else tainted
       in as{ amem = update (astkValue a) newContents amem
@@ -387,10 +387,10 @@ prop_stackheight as =
   shrinking shrink (500::Int) $ \n ->
     forAll (traceN as n) $ \(Trace ass) ->
         let pc_lists = groupBy ((==) `on` apc) ass in
-        let sh_are_equal = \ass -> and (zipWith ((==) `on` length . astk) 
-                                                ass 
-                                                (drop 1 ass)) in
+        let sh_are_equal ass = and (zipWith ((==) `on` length . astk) 
+                                             ass 
+                                             (drop 1 ass)) in
         -- assumption: only considering changes of height size that do
         -- not block the semantics
-        and (map isWF ass)  ==>
-        and (map sh_are_equal pc_lists)
+        all isWF ass  ==>
+        all sh_are_equal pc_lists

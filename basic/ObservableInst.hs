@@ -1,5 +1,5 @@
-{-# LANGUAGE ImplicitParams, FlexibleContexts, UndecidableInstances,
-    RecordWildCards, TupleSections, GeneralizedNewtypeDeriving, StandaloneDeriving #-}
+{-# LANGUAGE FlexibleContexts, UndecidableInstances, RecordWildCards,
+    TupleSections, GeneralizedNewtypeDeriving #-}
 
 module ObservableInst where
 
@@ -142,7 +142,7 @@ instance Flaggy DynFlags => Observable AS where
                       then const $ return []
                       else mapM varyStkElt
 
-  shrinkV v = shrinkVReal v 
+  shrinkV = shrinkVReal 
     where
     shrinkVReal _ | shrink_nothing getFlags = []
     shrinkVReal (Variation as as') =
@@ -172,7 +172,7 @@ instance Flaggy DynFlags => Observable AS where
                ]
 
            harder_shrink
-             | (L == lab (apc as) && (which_equiv == EquivMem)) 
+             | L == lab (apc as) && (which_equiv == EquivMem) 
              = [ Variation AS{amem=amem', aimem=aimem', astk=astk', apc=apc as}
                            AS{amem=amem'', aimem=aimem'', astk=astk'', apc=apc as'} 
                | (Variation (amem',ShrinkTailNonEmpty aimem')
@@ -186,7 +186,7 @@ instance Flaggy DynFlags => Observable AS where
                [Variation as{aimem=aimem'} as'{aimem=aimem''}
                | shrink_to_noop getFlags,
                  (aimem',aimem'') <- shrink2noops (aimem as) (aimem as')]
-             | (L == lab (apc as) || (which_equiv == EquivWrongFull)) 
+             | L == lab (apc as) || (which_equiv == EquivWrongFull)
              = [ Variation AS{amem=amem', aimem=aimem', astk=astk', apc=apc as}
                            AS{amem=amem'', aimem=aimem'', astk=astk'', apc=apc as'} 
                | Variation (amem',ShrinkTailNonEmpty aimem',astk')

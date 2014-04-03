@@ -1,4 +1,4 @@
-{-# LANGUAGE ImplicitParams, DeriveDataTypeable #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 module Flags where
 
 import Data.Typeable
@@ -179,8 +179,7 @@ readIfcSemantics :: DynFlags -> [IfcSemantics]
 -- Reads a parsed and cached version of IfcSemantics, which may be
 -- replaced by a singleton list for generating tables of bug detection
 -- times. 
-readIfcSemantics df
-  = ifc_semantics_singleton df
+readIfcSemantics = ifc_semantics_singleton
 
 data GenInstrs
   = InstrsBasic -- Generate only very basic instructions (Add/Push/Noop/Load/Store/Halt)
@@ -271,7 +270,7 @@ data TMUDriver
 type DynFlags = TMUDriver
 
 getMaxBugs :: DynFlags -> Int
-getMaxBugs f = extrapol_add f + (timeout f) * (extrapol_mul f)
+getMaxBugs f = extrapol_add f + timeout f * extrapol_mul f
 
 -- The default setting for flags should produce a correct machine
 dynFlagsDflt :: DynFlags
