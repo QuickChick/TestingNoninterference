@@ -142,78 +142,76 @@ instance Flaggy DynFlags => Observable AS where
                       then const $ return []
                       else mapM varyStkElt
 
-  shrinkV = shrinkVReal 
-    where
-    shrinkVReal _ | shrink_nothing getFlags = []
-    shrinkVReal (Variation as as') =
-       shrinkV' (Variation as as')
-     ++ 
-       if shrinkNoops then
-          [ v' | (Noop,Noop,i) <- zip3 (aimem as) (aimem as') [0..], 
-             let v = Variation 
-                       as  { aimem = take i (aimem as)  ++ drop (i+1) (aimem as)  }
-                       as' { aimem = take i (aimem as') ++ drop (i+1) (aimem as') },
-             v' <- v : shrinkV' v ] 
-       else []
-     
-     where
-       shrinkNoops = shrink_noops getFlags
-       shrinkV' (Variation as as')
-         = easy_shrink ++ (harder_shrink \\ easy_shrink)
-         where
-           which_equiv = equiv getFlags
-           easy_shrink  -- applies to all equivalences
-             = [ Variation as{aimem = init (aimem as)} as'{aimem = init (aimem as')}
-               | length (aimem as) > 1, length (aimem as') > 1
-               ]
-               ++ 
-               [ Variation as{amem = init (amem as)} as'{amem = init (amem as')}
-               | amem as /= [], amem as' /= []
-               ]
+  shrinkV _ | shrink_nothing getFlags = []
+  shrinkV (Variation as as') =
+     shrinkV' (Variation as as')
+   ++
+     if shrinkNoops then
+        [ v' | (Noop,Noop,i) <- zip3 (aimem as) (aimem as') [0..],
+           let v = Variation
+                     as  { aimem = take i (aimem as)  ++ drop (i+1) (aimem as)  }
+                     as' { aimem = take i (aimem as') ++ drop (i+1) (aimem as') },
+           v' <- v : shrinkV' v ]
+     else []
 
-           harder_shrink
-             | L == lab (apc as) && (which_equiv == EquivMem) 
-             = [ Variation AS{amem=amem', aimem=aimem', astk=astk', apc=apc as}
-                           AS{amem=amem'', aimem=aimem'', astk=astk'', apc=apc as'} 
-               | (Variation (amem',ShrinkTailNonEmpty aimem')
-                            (amem'',ShrinkTailNonEmpty aimem''),
-                  astk',astk'') <-
-                       shrink (Variation (amem as,ShrinkTailNonEmpty $ aimem as)
-                                         (amem as',ShrinkTailNonEmpty $ aimem as'),
-                               astk as, astk as')
-               ] ++
-               -- try shrinking TWO instructions to Noop simultaneously
-               [Variation as{aimem=aimem'} as'{aimem=aimem''}
-               | shrink_to_noop getFlags,
-                 (aimem',aimem'') <- shrink2noops (aimem as) (aimem as')]
-             | L == lab (apc as) || (which_equiv == EquivWrongFull)
-             = [ Variation AS{amem=amem', aimem=aimem', astk=astk', apc=apc as}
-                           AS{amem=amem'', aimem=aimem'', astk=astk'', apc=apc as'} 
-               | Variation (amem',ShrinkTailNonEmpty aimem',astk')
-                           (amem'',ShrinkTailNonEmpty aimem'',astk'') <-
-                       shrinkV (Variation (amem as,ShrinkTailNonEmpty $ aimem as,astk as)
-                                          (amem as',ShrinkTailNonEmpty $ aimem as',astk as'))
-               ]                         
-             | EquivFull <- which_equiv
-             -- High PC, full equivalence means we can shrink stacks cleverly
-             = [ Variation AS{amem=amem',  aimem=aimem',  astk=astk',  apc=apc as}
-                           AS{amem=amem'', aimem=aimem'', astk=astk'', apc=apc as'} 
-               | Variation (amem', ShrinkTailNonEmpty aimem',  SHS astk') 
-                           (amem'',ShrinkTailNonEmpty aimem'', SHS astk'') <- 
-                    shrinkV (Variation (amem as,  ShrinkTailNonEmpty (aimem as),  SHS (astk as))
-                                       (amem as', ShrinkTailNonEmpty (aimem as'), SHS (astk as')))
-               ]
-             | otherwise
-               -- Just High PC and some other equivalence (EquivMem, or EquivLow)
-               -- Is it worth shrinking in some other completely crazy way?
-             = [ Variation AS{amem=amem',  aimem=aimem',  astk=astk',  apc=apc as}
-                           AS{amem=amem'', aimem=aimem'', astk=astk'', apc=apc as'} 
-               |  (astk', astk'', (amem', ShrinkTailNonEmpty aimem'),
-                                  (amem'',ShrinkTailNonEmpty aimem'')) <- 
-                       shrink (astk as, astk as',
-                              (amem as,  ShrinkTailNonEmpty (aimem as)),
-                              (amem as', ShrinkTailNonEmpty (aimem as')))
-               ]
+   where
+     shrinkNoops = shrink_noops getFlags
+     shrinkV' (Variation as as')
+       = easy_shrink ++ (harder_shrink \\ easy_shrink)
+       where
+         which_equiv = equiv getFlags
+         easy_shrink  -- applies to all equivalences
+           = [ Variation as{aimem = init (aimem as)} as'{aimem = init (aimem as')}
+             | length (aimem as) > 1, length (aimem as') > 1
+             ]
+             ++
+             [ Variation as{amem = init (amem as)} as'{amem = init (amem as')}
+             | amem as /= [], amem as' /= []
+             ]
+
+         harder_shrink
+           | L == lab (apc as) && (which_equiv == EquivMem)
+           = [ Variation AS{amem=amem', aimem=aimem', astk=astk', apc=apc as}
+                         AS{amem=amem'', aimem=aimem'', astk=astk'', apc=apc as'}
+             | (Variation (amem',ShrinkTailNonEmpty aimem')
+                          (amem'',ShrinkTailNonEmpty aimem''),
+                astk',astk'') <-
+                     shrink (Variation (amem as,ShrinkTailNonEmpty $ aimem as)
+                                       (amem as',ShrinkTailNonEmpty $ aimem as'),
+                             astk as, astk as')
+             ] ++
+             -- try shrinking TWO instructions to Noop simultaneously
+             [Variation as{aimem=aimem'} as'{aimem=aimem''}
+             | shrink_to_noop getFlags,
+               (aimem',aimem'') <- shrink2noops (aimem as) (aimem as')]
+           | L == lab (apc as) || (which_equiv == EquivWrongFull)
+           = [ Variation AS{amem=amem', aimem=aimem', astk=astk', apc=apc as}
+                         AS{amem=amem'', aimem=aimem'', astk=astk'', apc=apc as'}
+             | Variation (amem',ShrinkTailNonEmpty aimem',astk')
+                         (amem'',ShrinkTailNonEmpty aimem'',astk'') <-
+                     shrinkV (Variation (amem as,ShrinkTailNonEmpty $ aimem as,astk as)
+                                        (amem as',ShrinkTailNonEmpty $ aimem as',astk as'))
+             ]
+           | EquivFull <- which_equiv
+           -- High PC, full equivalence means we can shrink stacks cleverly
+           = [ Variation AS{amem=amem',  aimem=aimem',  astk=astk',  apc=apc as}
+                         AS{amem=amem'', aimem=aimem'', astk=astk'', apc=apc as'}
+             | Variation (amem', ShrinkTailNonEmpty aimem',  SHS astk')
+                         (amem'',ShrinkTailNonEmpty aimem'', SHS astk'') <-
+                  shrinkV (Variation (amem as,  ShrinkTailNonEmpty (aimem as),  SHS (astk as))
+                                     (amem as', ShrinkTailNonEmpty (aimem as'), SHS (astk as')))
+             ]
+           | otherwise
+             -- Just High PC and some other equivalence (EquivMem, or EquivLow)
+             -- Is it worth shrinking in some other completely crazy way?
+           = [ Variation AS{amem=amem',  aimem=aimem',  astk=astk',  apc=apc as}
+                         AS{amem=amem'', aimem=aimem'', astk=astk'', apc=apc as'}
+             |  (astk', astk'', (amem', ShrinkTailNonEmpty aimem'),
+                                (amem'',ShrinkTailNonEmpty aimem'')) <-
+                     shrink (astk as, astk as',
+                            (amem as,  ShrinkTailNonEmpty (aimem as)),
+                            (amem as', ShrinkTailNonEmpty (aimem as')))
+             ]
 
 -- shrink two instructions to Noop simultaneously
 shrink2noops :: [Instr] -> [Instr] -> [([Instr], [Instr])]
