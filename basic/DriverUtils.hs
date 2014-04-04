@@ -38,30 +38,39 @@ import ObservableInst ()
 
 import Timeout (timeout')
 
-
-
-
 {----------------------------- Properties to test -----------------------------}
 
 {----- Abstract machine-----}
 
+-- Wrapper around Variation AS to allow switching between Arbitrary
+-- instances more easily
+-- TODO Consider using Smart (Shrink2 _), but NOT the other way.
+newtype Var = Var (Smart (Shrink2 (Variation AS)))
+  deriving Show
+
+getVar :: Var -> Variation AS
+getVar (Var (Smart _ (Shrink2 v))) = v
+
+instance Flaggy DynFlags => Arbitrary Var where
+  arbitrary = Var <$> arbitrary
+  shrink (Var v) = [ Var v' | v' <- shrink v ]
+
 -- This tests that at every step of the observed executions, the
 -- abstract machines are indistinguishable from each other with
--- respect to (~~~).  
+-- respect to (~~~).
 -- (NB: We use 'Fixed' to prevent QuickCheck from shrinking things.)
--- TODO Consider using Smart (Shrink2 _), but NOT the other way.  
 -- TODO We changed the aimem to be shrunk with the (new) ShrinkTail, but we
--- might? not want that for Shrink2.  
--- prop_secure :: Smart (Variation AS) -> Property 
--- We have some evidence that if an execution fails, it fails before 
+-- might? not want that for Shrink2.
+-- prop_secure :: Smart (Variation AS) -> Property
+-- We have some evidence that if an execution fails, it fails before
 -- ~40 or not at all
 gen_prop_noninterference :: (Flaggy DynFlags, Testable prop)
                          => ([AS] -> a) -> (a -> a -> prop)
-                         -> Smart (Shrink2 (Variation AS)) -> Property
-gen_prop_noninterference observe compare 
-                  (Smart _ (Shrink2 (Variation as as'))) =
-  let step_prop (n,n') 
-        = forAll (liftM2 (,) (traceN as n) (traceN as' n')) $ 
+                         -> Var -> Property
+gen_prop_noninterference observe compare var =
+  let Variation as as' = getVar var
+      step_prop (n,n')
+        = forAll (liftM2 (,) (traceN as n) (traceN as' n')) $
           \(Trace ass, Trace ass') ->
               let obAss  = observe ass
                   obAss' = observe ass'
@@ -204,7 +213,7 @@ printLaTeX as as' ass ass' = do
 
 gen_prop_noninterference_observable_lists :: (Flaggy DynFlags, Observable a)
                                           => ([AS] -> [a])
-                                          -> Smart (Shrink2 (Variation AS)) -> Property
+                                          -> Var -> Property
 gen_prop_noninterference_observable_lists observe =
   gen_prop_noninterference observe (\a b -> and (zipWith (~~~) a b))
 
@@ -212,13 +221,13 @@ gen_prop_noninterference_observable_lists observe =
 --     How does it combine with the flag if_labels_observable set to
 --     false?
 prop_semantic_noninterference :: Flaggy DynFlags
-                              => Smart (Shrink2 (Variation AS)) -> Property
+                              => Var -> Property
 prop_semantic_noninterference =
   gen_prop_noninterference_observable_lists observe 
   where observe = map head . groupBy (~~~) . map amem
 
 prop_low_lockstep :: Flaggy DynFlags
-                  => Smart (Shrink2 (Variation AS)) -> Property
+                  => Var -> Property
 prop_low_lockstep =
   gen_prop_noninterference (splitLast . filter ((== L) . lab . apc)) (~=~)
   where
@@ -244,7 +253,7 @@ prop_low_lockstep =
     (as1:ass1,l1) ~=~ (as2:ass2,l2) = as1 ~~~ as2 && (ass1,l1) ~=~ (ass2,l2)
 
 prop_end_to_end_aux :: Flaggy DynFlags
-                   => Bool -> Smart (Shrink2 (Variation AS)) -> Property
+                   => Bool -> Var -> Property
 prop_end_to_end_aux break =
    gen_prop_noninterference observe compare 
    where observe ass | is_halting last_as = (ass, Just last_as)
@@ -272,17 +281,18 @@ prop_end_to_end_aux break =
             -- collect "At least one doesn't halt in L" True
 
 prop_end_to_end :: Flaggy DynFlags
-                   => Smart (Shrink2 (Variation AS)) -> Property
+                   => Var -> Property
 prop_end_to_end = prop_end_to_end_aux False
 
 prop_end_to_end_broken :: Flaggy DynFlags
-                   => Smart (Shrink2 (Variation AS)) -> Property
+                   => Var -> Property
 prop_end_to_end_broken = prop_end_to_end_aux True
 
 
 
-prop_single_step :: Flaggy DynFlags => Smart (Shrink2 (Variation AS)) -> Property
-prop_single_step (Smart _ (Shrink2 (Variation as1 as2))) =
+prop_single_step :: Flaggy DynFlags => Var -> Property
+prop_single_step var =
+  let Variation as1 as2 = getVar var in
   forAll (liftA2 (,) (step' as1) (step' as2)) $ \(mas1',mas2') ->
 --   collect (length $ filter (not . isAData) $ astk as1) $
 --   collect (head $ words $ show $ head (aimem as1)) $
