@@ -65,11 +65,11 @@ quickCheckN n = quickCheckWith stdArgs{maxSuccess = n}
   
 main :: IO ()
 main = do
-    putStrLn "Checking defaultTable: SSNI"
-    quickCheckN 10000 $ mkProperty ssniConfig defaultTable
+--    putStrLn "Checking defaultTable: SSNI"
+--    quickCheckN 10000 $ mkProperty ssniConfig defaultTable
     putStrLn "Checking defaultTable: LLNI"
     quickCheckN 10000 $ mkProperty llniConfig defaultTable
-    putStrLn "Checking Mutants with SSNI"
-    checkMutants ssniConfig
+--    putStrLn "Checking Mutants with SSNI"
+--    checkMutants ssniConfig
     putStrLn "Checking Mutants with LLNI"
     checkMutants llniConfig

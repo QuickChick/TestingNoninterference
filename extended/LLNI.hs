@@ -40,7 +40,7 @@ propLLNI Flags{..} t (Var obs st1 st2) =
                             putStrLn . PP.render $ pp v) $ zipWith (Var obs) sts1' sts2')-}
       property
 --    in property $ --whenFail (putStrLn (show sts1') >> putStrLn (show sts2')) $
-       $ (and $ zipWith (indist obs) sts1' sts2')
+       $ tracesOK && (and $ zipWith (indist obs) sts1' sts2')
 
 testLLNI :: Flags -> RuleTable -> Property
 testLLNI f t = 

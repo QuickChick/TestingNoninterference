@@ -218,7 +218,7 @@ copyInstructions z s = s{imem = map (fromMaybe Noop) (toList z)}
 genExecHelper :: RuleTable -> State -> State -> Int -> Zipper (Maybe Instr) 
               -> Gen State
 genExecHelper _ s0 s 0 z = return $ copyInstructions z s0
-genExecHelper table s0 s tries zipper = do
+genExecHelper table s0 s tries zipper = {- trace "GenExec" $ -} do
   (zipper',i) <- case current zipper of 
                    Nothing -> {- traceShow "Generatin" $-} do
                      -- No instruction. Generate
