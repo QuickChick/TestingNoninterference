@@ -69,3 +69,9 @@ mutateTable t = Map.foldWithKey
                  [] t
 
     
+showMutantX :: Int -> String
+showMutantX n = 
+    show $ Map.differenceWith 
+           (\a b -> if show a == show b then Nothing else Just a) 
+           (mutateTable defaultTable !! n)
+           defaultTable
