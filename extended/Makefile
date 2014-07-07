@@ -1,6 +1,6 @@
 execs=Driver
 
-ghc_compilation_opts = -O2 -Werror
+ghc_compilation_opts = -O2 # -Werror
 ghc_warning_opts     = -fwarn-missing-signatures  \
                        -fwarn-unused-do-bind -fwarn-incomplete-patterns \
                        -fwarn-tabs

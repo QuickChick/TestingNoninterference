@@ -3,6 +3,8 @@ module Indist where
 import Data.Maybe
 
 import Debug.Trace
+import System.IO.Unsafe
+
 
 import Labels
 import Primitives
@@ -51,7 +53,7 @@ instance Indist PtrAtom where
     indist obs (PAtm i1 l1) (PAtm i2 l2) 
         | isLow l1 obs || isLow l2 obs =
             l1 == l2 && i1 == i2
-        | otherwise = trace "Both High" True
+        | otherwise = True
 
 -- List Indistinguishability 
 instance Indist a => Indist [a] where
@@ -86,6 +88,13 @@ instance Indist a => Indist (Mem a) where
         where getFrames m = catMaybes $ map (getFrame m) (getAllBlocks obs m)
 
 -- Cropping the high part of the stack
+
+isLowStkElt :: Label -> StkElt -> Bool
+isLowStkElt obs (StkElt (pc,_,_,_)) = isLow (pcLab pc) obs
+
+cropStack :: Label -> Stack -> Stack
+cropStack obs (Stack s) = Stack $ filter (isLowStkElt obs) s
+
 cropTop :: Label -> Stack -> Stack
 cropTop _ (Stack []) = Stack []
 cropTop obs s@(Stack (StkElt (pc, _, _ ,_):s')) =
@@ -101,18 +110,23 @@ instance Indist StkElt where
                
 instance Indist Stack where
     indist obs s1 s2 = 
-        indist obs (unStack $ cropTop obs s1) (unStack $ cropTop obs s2)
+        indist obs (unStack $ cropStack obs s1) (unStack $ cropStack obs s2)
 
 -- State indistinguishability
 -- * If both pc's are high, memories and stacks must be indistinguishable
 --   ++ Could be weakened with reachability
 -- * If at least one is low, pairwise indist
+
+debug :: String -> Bool -> Bool
+--debug s x = if not x then unsafePerformIO $ do putStrLn s >> return x else x
+debug s x = x
+
 instance Indist State where 
     indist obs (State imem1 mem1 s1 regs1 pc1) (State imem2 mem2 s2 regs2 pc2) =
-        indist obs imem1 imem2 
-        && indist obs mem1 mem2
-        && indist obs s1 s2
+        debug "IMemory" (indist obs imem1 imem2)
+        && debug "Memory" (indist obs mem1 mem2)
+        && debug "Stack" (indist obs s1 s2)
         && if isLow (pcLab pc1) obs || isLow (pcLab pc2) obs then
                indist obs pc1 pc2
-               && indist obs regs1 regs2 
+               && debug "Registers" (indist obs regs1 regs2 )
            else True

@@ -16,15 +16,18 @@ import Control.Monad
 import Indist    
 import Generation
 import Shrinking
+import Flags
     
 import Pretty
 import Text.PrettyPrint (($$), text)
 import qualified Text.PrettyPrint as PP
 
-propSSNI :: RuleTable -> Property
-propSSNI t = 
---    forAllShrink genVariationState shrinkV $ \v@(Var obs st1 st2) ->
-  forAllShrink genVariationState (const []) $ \v@(Var obs st1 st2) ->
+testSSNI :: Flags -> RuleTable -> Property
+testSSNI f t = 
+  forAllShrink (genVariationState f) (const []) $ propSSNI f t
+
+propSSNI :: Flags -> RuleTable -> Variation State -> Property
+propSSNI f t (Var obs st1 st2) = 
 --  collect (join $ fmap opcodeOfInstr $ instrLookup (imem st1) (pc st1)) $ 
   let isLowState st = isLow (pcLab $ pc st) obs in
   if indist obs st1 st2 then 

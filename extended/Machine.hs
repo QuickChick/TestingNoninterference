@@ -15,14 +15,11 @@ data State = State { imem  :: IMem
                    , pc    :: PtrAtom } 
            deriving (Eq, Show, Read)
 
-
-
 -- Execution - for now "correct"
 -- I tried to get all the changing parts inside a let for easier tweaking later
-exec :: RuleTable -> State -> Maybe (Trace, State)
-exec t s@(State {..}) = do
+exec' :: RuleTable -> State -> Instr -> Maybe (Trace, State)
+exec' t s@(State {..}) instruction = do
   let (PAtm addrPc lpc) = pc 
-  instruction <- instrLookup imem pc
   case instruction of 
     Lab r1 r2 -> do
       -- TRUE, BOT, LabPC
@@ -193,6 +190,11 @@ exec t s@(State {..}) = do
       regs' <- writeR r2 (Atom result rlab) regs
       return ([], s{regs = regs', pc = pc'})
     Halt -> Nothing
+
+exec :: RuleTable -> State -> Maybe (Trace, State)
+exec r s@State{..} = do 
+  instruction <- instrLookup imem pc
+  exec' r s instruction
 
 execN :: Int -> RuleTable -> State -> (Trace, [State])
 execN 0 t s = ([], [s])

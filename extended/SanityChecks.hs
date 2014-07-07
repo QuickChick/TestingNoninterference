@@ -16,10 +16,8 @@ import SingleStateArb()
 propStampsWellFormed :: Property
 propStampsWellFormed = forAllShrink arbitrary shrink wellFormed
 
-propPreservesWellFormed :: RuleTable -> Property
-propPreservesWellFormed t =
---    forAllShrink arbitrary shrink $ \st -> 
-    forAllShrink arbitrary (const []) $ \st -> 
+propPreservesWellFormed :: RuleTable -> State -> Property
+propPreservesWellFormed t st =
     wellFormed st ==> 
     case exec t st of 
       Just (_, st') -> property $ 
