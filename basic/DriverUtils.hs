@@ -16,7 +16,7 @@ import Data.List (sortBy, groupBy, isInfixOf, intercalate)
 import Text.Printf
 import System.CPUTime
 import Data.Maybe
-import GHC.Float
+import qualified GHC.Float as Float
 
 import Data.IORef
 
@@ -347,7 +347,7 @@ profileTests
                 property True
        ; if latex_output getFlags
          then do { a <- average
-                 ; let astr = formatRealFloat FFFixed (Just 2) (a-1)
+                 ; let astr = Float.formatRealFloat Float.FFFixed (Just 2) (a-1)
                  ; putStrLn "\\ifonlylen%"
                  ; putStrLn (astr ++ "%")
                  ; putStrLn "\\else%"
@@ -406,8 +406,8 @@ profileVariations
       print_nicely r
         = do { (a1,a2) <- average2
              -- ; (b1,b2) <- average2' 
-             ; let astr1 = formatRealFloat FFFixed (Just 2) (a1-1)
-             ; let astr2 = formatRealFloat FFFixed (Just 2) (a2-1)
+             ; let astr1 = Float.formatRealFloat Float.FFFixed (Just 2) (a1-1)
+             ; let astr2 = Float.formatRealFloat Float.FFFixed (Just 2) (a2-1)
              -- ; let bstr1 = formatRealFloat FFFixed (Just 2) (b1-1)
              -- ; let bstr2 = formatRealFloat FFFixed (Just 2) (b2-1)
              ; putStrLn "\\ifonlylen%"

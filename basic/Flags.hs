@@ -64,8 +64,9 @@ allStrategies
 
 data PropTest
   = 
-    -- Abstract machine
-    PropSynopsisNonInterference
+    -- Noninterference
+    PropSynopsisNonInterference -- WTF is this?
+                                -- prop_semantic_noninterference
   | PropLLNI
   | PropSSNI
   | PropEENI
