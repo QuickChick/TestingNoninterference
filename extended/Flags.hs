@@ -2,5 +2,20 @@ module Flags where
 
 data GenType = GenLLNI
              | GenSSNI
+
 data Flags = Flags { strategy :: GenType 
-                   , noSteps  :: Int }
+                   , noSteps  :: Int
+                   , maxTests :: Int
+                   , discardRatio :: Int
+                   , showCounters :: Bool
+                   , printLatex   :: Bool 
+                   , timeout      :: Int }
+
+defaultFlags :: Flags
+defaultFlags = Flags { strategy = GenSSNI
+                     , noSteps  = 2
+                     , maxTests = 42000
+                     , discardRatio = 5
+                     , showCounters = True
+                     , printLatex = False
+                     , timeout = 10 }
