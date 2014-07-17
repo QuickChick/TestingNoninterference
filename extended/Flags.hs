@@ -9,7 +9,8 @@ data Flags = Flags { strategy :: GenType
                    , discardRatio :: Int
                    , showCounters :: Bool
                    , printLatex   :: Bool 
-                   , timeout      :: Int }
+                   , timeout      :: Int 
+                   , doShrink     :: Bool }
 
 defaultFlags :: Flags
 defaultFlags = Flags { strategy = GenSSNI
@@ -18,4 +19,5 @@ defaultFlags = Flags { strategy = GenSSNI
                      , discardRatio = 5
                      , showCounters = True
                      , printLatex = False
-                     , timeout = 10 }
+                     , timeout = 10 
+                     , doShrink = False }

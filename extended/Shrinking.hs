@@ -242,11 +242,25 @@ shrinkRegisterContentsV (Var obs st1 st2) =
           | Var obs regs1' regs2' 
               <- shrinkV $ Var obs (unRegSet $ regs st1) (unRegSet $ regs st2)]
 
+--- Shrink Instructions --- 
+
+instance ShrinkV Instr where
+    shrinkV (Var o x x') 
+        | x == x' = [Var o y y | y <- shrink x]
+        | otherwise = error "Instructions not the same in shrinkV"
+
+shrinkInstructionsV :: Variation State -> [Variation State]
+shrinkInstructionsV (Var obs st1 st2) = 
+    [ Var obs st1{imem = imem1'} st2{imem = imem2'} 
+          | Var obs imem1' imem2' 
+              <- shrinkV $ Var obs (imem st1) (imem st2)]
+
 --- Combining everything ---
 
 instance ShrinkV State where
     shrinkV v@(Var obs st1 st2) = 
         removeRegisters v ++ shrinkStacks v
         ++ shrinkRegisterContentsV v
+        ++ shrinkInstructionsV v
         
     

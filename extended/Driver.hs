@@ -52,13 +52,13 @@ checkMutants flags = do
 
 mkProperty :: Flags -> RuleTable -> Property
 mkProperty f@Flags{..} t = 
-    -- Flag for shrinking
+    let shrinkF = if doShrink then shrinkV else const [] in
     case strategy of
       GenSSNI -> 
-          forAll (genVariationState f) $ \v@(Var _ st _) -> 
+          forAllShrink (genVariationState f) shrinkF $ \v@(Var _ st _) -> 
               propSSNI f t v .&&. propPreservesWellFormed t st
       GenLLNI -> 
-          forAll (genVariationState f) $ \v@(Var _ st _) ->
+          forAllShrink (genVariationState f) shrinkF $ \v@(Var _ st _) ->
               propLLNI f t v .&&. propPreservesWellFormed t st
 
 ssniConfig :: Flags 
