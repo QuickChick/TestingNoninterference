@@ -19,6 +19,7 @@ upfrom :: (Num a, Random a) => a -> a -> Gen a
 n `upfrom` low = choose (low,low+n-1)
 
 isIndex :: Int -> [a] -> Bool
+{-# INLINE isIndex #-}
 isIndex a l = a >= 0 && a < length l
 
 update :: Int -> a -> [a] -> [a]

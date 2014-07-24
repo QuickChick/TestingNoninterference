@@ -2,7 +2,7 @@
 # most-recently included makefile (us) is last.
 top_level_dir = $(dir $(lastword $(MAKEFILE_LIST)))
 
-ghc_compilation_opts = -O2 -Werror
+ghc_compilation_opts = -O2
 ghc_warning_opts     = -fwarn-unused-imports -fwarn-missing-signatures  \
                        -fwarn-unused-do-bind -fwarn-incomplete-patterns \
                        -fwarn-tabs
