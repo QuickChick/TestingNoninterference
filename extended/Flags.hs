@@ -15,9 +15,9 @@ data Flags = Flags { strategy :: GenType
 defaultFlags :: Flags
 defaultFlags = Flags { strategy = GenSSNI
                      , noSteps  = 2
-                     , maxTests = 42000
+                     , maxTests = 10000
                      , discardRatio = 5
                      , showCounters = True
                      , printLatex = False
-                     , timeout = 10 
+                     , timeout = 100
                      , doShrink = False }

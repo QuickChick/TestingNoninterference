@@ -68,7 +68,13 @@ mutateTable t = Map.foldWithKey
                  (\k a -> (++) $ map (flip (Map.insert k) t) (mutateRule a)) 
                  [] t
 
-    
+-- Convert to LaTeX    
+showMutantTable :: RuleTable -> String
+showMutantTable t = 
+    show $ head $ Map.keys $ Map.differenceWith 
+           (\a b -> if show a == show b then Nothing else Just a) 
+           t defaultTable
+
 showMutantX :: Int -> String
 showMutantX n = 
     show $ Map.differenceWith 

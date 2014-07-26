@@ -17,6 +17,8 @@ import Rules
 import Mutate
 import Flags
 
+import Text.Printf
+
 import System.CPUTime
 import Timeout (timeout')
 import Data.IORef
@@ -62,9 +64,9 @@ mkProperty f@Flags{..} t =
               propLLNI f t v .&&. propPreservesWellFormed t st
 
 ssniConfig :: Flags 
-ssniConfig = defaultFlags { strategy = GenSSNI } 
+ssniConfig = defaultFlags { strategy = GenSSNI , showCounters = False } 
 llniConfig :: Flags
-llniConfig = defaultFlags { strategy = GenLLNI , noSteps = 42}
+llniConfig = defaultFlags { strategy = GenLLNI , noSteps = 42 , showCounters = False}
 
 quickCheckN :: Int -> Property -> IO ()
 quickCheckN n = quickCheckWith stdArgs{maxSuccess = n}
@@ -196,17 +198,36 @@ checkTimeoutProperty flags table = do
                 Right (NoExpectedFailure {}) -> 
                     putStrLn "NoExpectedFailure!?" >> error "Bailing out"
 
---ssniConfig = (Flags GenSSNI 2, propSSNI, 
+computeMTTF :: TestCounters -> Maybe Rational
+computeMTTF cs = 
+  if null $ times_c cs then Nothing
+  else Just $ sum (map fromIntegral $ times_c cs) 
+           / (fromIntegral (bugs_c cs) * 1000)
 
---main = do 
-  
+printMTTF :: Maybe Rational -> String
+printMTTF Nothing = "----"
+printMTTF (Just x) = printf "%0.2f" (fromRational x :: Double)
+
+statsForTable :: RuleTable -> IO ()
+statsForTable table = do
+    let flags = [ssniConfig, llniConfig]
+    ssniCounters <- checkTimeoutProperty ssniConfig table
+    let ssniStats = computeMTTF ssniCounters
+    llniCounters <- checkTimeoutProperty llniConfig table
+    let llniStats = computeMTTF llniCounters
+    putStrLn $ showMutantTable table ++ " , "  
+             ++ printMTTF ssniStats ++ " , " 
+             ++ printMTTF llniStats
+
 main :: IO ()
 main = do
+  putStrLn "INSTR , SSNI, LLNI "
+  mapM_ statsForTable $ mutateTable defaultTable
 --    putStrLn "Checking defaultTable: SSNI"
 --    quickCheckN 10000 $ mkProperty ssniConfig defaultTable
-    putStrLn "Checking defaultTable: LLNI"
-    cs <- checkTimeoutProperty llniConfig defaultTable
-    putStrLn $ show cs
+--    putStrLn "Checking defaultTable: LLNI"
+--    cs <- checkTimeoutProperty llniConfig defaultTable
+--    putStrLn $ show cs
 --    quickCheckN 10000 $ mkProperty llniConfig defaultTable
 --    putStrLn "Checking Mutants with SSNI"
 --    checkMutants ssniConfig
