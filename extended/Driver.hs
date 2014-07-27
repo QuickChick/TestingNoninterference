@@ -182,7 +182,7 @@ checkTimeoutProperty flags table = do
                              bugs_c = bugs_c counters + 1,
                              disc_c = disc_c counters + realDiscards,
                              times_c = usedMicrosecs : times_c counters }
-                       in checkPropLoop discRef counters' 
+                       in counters' `seq` checkPropLoop discRef counters' 
                               $ microsecs - usedMicrosecs
                     | otherwise -> do
                        putStrLn ("Unknown failure while testing!?: " ++ reason) 
@@ -192,7 +192,7 @@ checkTimeoutProperty flags table = do
                 Right (Success { numTests }) ->
                     let counters' = counters { run_c  = run_c  counters + numTests 
                                , disc_c = disc_c counters + realDiscards }
-                    in checkPropLoop discRef counters' (microsecs - usedMicrosecs)
+                    in counters' `seq` checkPropLoop discRef counters' (microsecs - usedMicrosecs)
                 Right (GaveUp {}) -> 
                     putStrLn "GaveUp!?" >> error "Bailing out!"
                 Right (NoExpectedFailure {}) -> 

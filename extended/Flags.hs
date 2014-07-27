@@ -19,5 +19,5 @@ defaultFlags = Flags { strategy = GenSSNI
                      , discardRatio = 5
                      , showCounters = True
                      , printLatex = False
-                     , timeout = 100
+                     , timeout = 10
                      , doShrink = False }
