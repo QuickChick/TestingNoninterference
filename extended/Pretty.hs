@@ -74,7 +74,7 @@ instance PP Value where
     pp (VInt x) = pp x
     pp (VPtr x) = pp x
     pp (VLab x) = pp x
-    pp (VCpt x) = PP.brackets $ pp x
+--    pp (VCpt x) = PP.brackets $ pp x
 
 instance PP Atom where
     pp (Atom v l) = pp v <+> PP.char '@' <+> pp l
@@ -151,7 +151,7 @@ instance PP (Variation PtrAtom) where
     pp (Var obs p1@(PAtm n1 l1) p2@(PAtm n2 l2)) 
         | p1 == p2 = pp p1
         | n1 /= n2 && l1 /= l2 = ppVar p1 p2
-        | otherwise = pp (Var obs (VCpt n1) (VCpt n2))
+        | otherwise = pp (Var obs (VInt n1) (VInt n2))
                       <+> PP.char '@' <+> pp (Var obs l1 l2)
 
 instance PP (Variation RegSet) where

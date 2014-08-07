@@ -59,12 +59,14 @@ instance SmartGen Pointer where
       return $ Ptr mf addr
 
 instance SmartGen Int where
-    smartGen _ = frequency [(1, pure 0), (10, choose (0,10))]
+    smartGen (MkInfo _ cl _ _) 
+        = frequency [(1, pure 0), 
+                     (10, choose (0,cl-1))]
 
 instance SmartGen Value where
     smartGen info@(MkInfo _ cl dfs _) = 
-        frequency [(1, liftM VInt $ smartGen info)
-                  ,(1, liftM VCpt $ choose (0, cl - 1))
+        frequency [--(1, liftM VInt $ smartGen info)
+                   (1, liftM VInt $ choose (0, cl - 1))
                   ,(1, liftM VPtr $ smartGen info)
                   ,(1, liftM VLab $ smartGen info)]
 
@@ -106,24 +108,24 @@ isPtr :: Atom -> Bool
 isPtr (Atom (VPtr _) _) = True
 isPtr _ = False
 
-isCpt :: Atom -> Bool
-isCpt (Atom (VCpt _) _) = True
-isCpt _ = False
+isCpt :: Int -> Atom -> Bool
+isCpt imemLen (Atom (VInt x) _) = x < imemLen
+isCpt _ _ = False
 
 isLab :: Atom -> Bool
 isLab (Atom (VLab _) _) = True
 isLab _ = False
 
 -- Group Register into categories based on their contents
-groupRegisters :: [Register] -> 
+groupRegisters :: Int -> [Register] -> 
                   [RegPtr] -> [RegPtr] -> [RegPtr] -> [RegPtr] -> Int ->
                   ([RegPtr], [RegPtr], [RegPtr], [RegPtr])
-groupRegisters [] dptr cptr num lab n = (dptr, cptr, num, lab)
-groupRegisters (r:rs) dptr cptr num lab n 
-    | isInt r = groupRegisters rs dptr cptr (n : num) lab (n + 1)
-    | isPtr r = groupRegisters rs (n : dptr) cptr num lab (n + 1)
-    | isCpt r = groupRegisters rs dptr (n : cptr) num lab (n + 1)
-    | isLab r = groupRegisters rs dptr cptr num (n : lab) (n + 1)
+groupRegisters il [] dptr cptr num lab n = (dptr, cptr, num, lab)
+groupRegisters il (r:rs) dptr cptr num lab n 
+    | isCpt il r = groupRegisters il rs dptr (n : cptr) num lab (n + 1)
+    | isInt r = groupRegisters il rs dptr cptr (n : num) lab (n + 1)
+    | isPtr r = groupRegisters il rs (n : dptr) cptr num lab (n + 1)
+    | isLab r = groupRegisters il rs dptr cptr num (n : lab) (n + 1)
     | otherwise = error "Cases are exhaustive"
     
 containsRet :: Stack -> Bool
@@ -133,8 +135,10 @@ containsRet (Stack s) = not $ null s
 -- LL: TODO: Fix weights. AND DO SOMETHING ABOUT BRETS!
 ainstrSSNI :: State -> Gen Instr 
 ainstrSSNI st@State{..} = 
-    let (dptr, cptr, num, lab) = groupRegisters (unRegSet regs) [] [] [] [] 0
+    let (dptr, cptr, num', lab) = groupRegisters (length imem) 
+                                 (unRegSet regs) [] [] [] [] 0
         genRegPtr = choose (0, length (unRegSet regs) - 1)
+        num = num' ++ cptr
     in frequency $ 
            [(1, pure Noop)
            ,(0, pure Halt)
@@ -177,7 +181,8 @@ popInstrSSNI s@State{..} = do
 -- LL: TODO: Fix weights. AND DO SOMETHING ABOUT BRETS!
 ainstrLLNI :: State -> Gen Instr 
 ainstrLLNI st@State{..} = 
-    let (dptr, cptr, num, lab) = groupRegisters (unRegSet regs) [] [] [] [] 0
+    let (dptr, cptr, num, lab) = groupRegisters (length imem) 
+                                 (unRegSet regs) [] [] [] [] 0
         genRegPtr = choose (0, length (unRegSet regs) - 1)
     in frequency $ 
            [(1, pure Noop)
@@ -256,7 +261,7 @@ class SmartVary a where
 instance SmartVary Value where
     smartVary _ info (VInt _) = liftM VInt $ smartGen info
     smartVary _ info (VPtr p) = liftM VPtr $ smartGen info
-    smartVary _ info (VCpt p) = liftM VCpt $ choose (0, codeLen info - 1)
+--    smartVary _ info (VCpt p) = liftM VCpt $ choose (0, codeLen info - 1)
     smartVary _ info (VLab p) = liftM VLab $ smartGen info
 
 instance SmartVary Atom where

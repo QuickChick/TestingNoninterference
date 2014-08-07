@@ -25,7 +25,7 @@ moveZipper z@Zipper{..} n
           (x:t) -> 
               let z' = Zipper t x (current : back) (idx-1)
               in z' `seq` moveZipper z' n
-    | idx < n = 
+    | otherwise = 
         case back of 
           [] -> Nothing
           (x:t) -> 

@@ -72,7 +72,7 @@ exec' t s@(State {..}) instruction = do
       return ([], s{regs = regs', pc = pc'})
     BCall r1 r2 r3 -> do
       -- True, Join k LabPC, Join l LabPC
-      Atom (VCpt addr) l <- readR r1 regs
+      Atom (VInt addr) l <- readR r1 regs
       Atom (VLab b)    k <- readR r2 regs
       (Just rlab, rlpc) <- runTMU t BCALL [l,k] lpc
       let stack' = Stack $  (StkElt (PAtm (addrPc + 1) rlab, b, regs, r3)) 
@@ -123,7 +123,7 @@ exec' t s@(State {..}) instruction = do
       return ([], s{mem = mem', pc = pc'})
     Jump r1 -> do
       -- True, __ , Join LabPC l
-      Atom (VCpt addr) l <- readR r1 regs
+      Atom (VInt addr) l <- readR r1 regs
       (_, rlpc) <- runTMU t JUMP [l] lpc
       let pc'    = PAtm addr rlpc
       return ([], s{pc = pc'})

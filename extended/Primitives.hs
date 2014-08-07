@@ -10,7 +10,7 @@ data Pointer = Ptr Block Int
 
 data Value = VInt Int 
            | VPtr Pointer
-           | VCpt Int
+--            | VCpt Int -- Leave Code Pointers out
            | VLab Label
              deriving (Eq, Show, Read)
 
@@ -81,7 +81,9 @@ type Memory = Mem Atom
 alloc :: Int -> Label -> Label -> Atom -> Memory -> Maybe (Block, Memory)
 alloc size label stamp atom mem 
       | size < 0 = Nothing
-      | otherwise = Just $ allocate mem stamp $ Frame stamp label $ replicate size atom
+      | size > 42 = Nothing -- Discard *large* allocations
+      | otherwise = 
+          Just $ allocate mem stamp $ Frame stamp label $ replicate size atom
     
 load :: Memory -> Pointer -> Maybe Atom
 load m (Ptr frame address) = do 
