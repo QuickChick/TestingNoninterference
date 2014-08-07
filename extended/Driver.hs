@@ -23,6 +23,8 @@ import System.CPUTime
 import Timeout (timeout')
 import Data.IORef
 
+import System.Console.CmdArgs
+
 import Data.List
 
 import Control.Monad
@@ -221,8 +223,10 @@ statsForTable table = do
 
 main :: IO ()
 main = do
-  putStrLn "INSTR , SSNI, LLNI "
-  mapM_ statsForTable $ mutateTable defaultTable
+  flags <- cmdArgs defaultFlags
+  putStrLn $ show flags
+--  putStrLn "INSTR , SSNI, LLNI "
+--  mapM_ statsForTable $ mutateTable defaultTable
 --    putStrLn "Checking defaultTable: SSNI"
 --    quickCheckN 10000 $ mkProperty ssniConfig defaultTable
 --    putStrLn "Checking defaultTable: LLNI"

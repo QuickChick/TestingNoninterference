@@ -1,7 +1,11 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 module Flags where
+
+import System.Console.CmdArgs
 
 data GenType = GenLLNI
              | GenSSNI
+               deriving (Eq, Show, Read, Typeable, Data)
 
 data Flags = Flags { strategy :: GenType 
                    , noSteps  :: Int
@@ -11,6 +15,7 @@ data Flags = Flags { strategy :: GenType
                    , printLatex   :: Bool 
                    , timeout      :: Int 
                    , doShrink     :: Bool }
+           deriving (Eq, Show, Read, Typeable, Data)
 
 defaultFlags :: Flags
 defaultFlags = Flags { strategy = GenSSNI
