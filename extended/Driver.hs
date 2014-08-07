@@ -225,8 +225,8 @@ main :: IO ()
 main = do
   flags <- cmdArgs defaultFlags
   putStrLn $ show flags
---  putStrLn "INSTR , SSNI, LLNI "
---  mapM_ statsForTable $ mutateTable defaultTable
+  putStrLn "INSTR , SSNI, LLNI "
+  mapM_ statsForTable $ mutateTable defaultTable
 --    putStrLn "Checking defaultTable: SSNI"
 --    quickCheckN 10000 $ mkProperty ssniConfig defaultTable
 --    putStrLn "Checking defaultTable: LLNI"

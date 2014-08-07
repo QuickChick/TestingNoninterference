@@ -78,9 +78,10 @@ joinPtrAtom (PAtm n l) l' = PAtm n $ l `lub` l'
 
 type Memory = Mem Atom
 
-alloc :: Int -> Label -> Label -> Atom -> Memory -> (Block, Memory)
-alloc size label stamp atom mem = 
-    allocate mem stamp $ Frame stamp label $ replicate size atom
+alloc :: Int -> Label -> Label -> Atom -> Memory -> Maybe (Block, Memory)
+alloc size label stamp atom mem 
+      | size < 0 = Nothing
+      | otherwise = Just $ allocate mem stamp $ Frame stamp label $ replicate size atom
     
 load :: Memory -> Pointer -> Maybe Atom
 load m (Ptr frame address) = do 

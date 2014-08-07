@@ -95,9 +95,9 @@ exec' t s@(State {..}) instruction = do
       Atom (VInt i) k  <- readR r1 regs
       Atom (VLab l) k' <- readR r2 regs
       (Just rlab, rlpc) <- runTMU t ALLOC [k,k',l] lpc
-      let (block, mem') = alloc i l stamp (Atom (VInt 0) bot) mem
-          stamp  = k `lub` k' `lub` lpc
-          result = VPtr $ Ptr block 0
+      let stamp  = k `lub` k' `lub` lpc
+      (block, mem') <- alloc i l stamp (Atom (VInt 0) bot) mem
+      let result = VPtr $ Ptr block 0
           pc'    = PAtm (addrPc + 1) rlpc
       regs' <- writeR r3 (Atom result rlab) regs
       return ([], s{mem = mem', regs = regs', pc = pc'})

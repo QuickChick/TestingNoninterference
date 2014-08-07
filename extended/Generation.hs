@@ -359,7 +359,7 @@ genInitMem flags = do
       aux n (m,l) = do 
         frameSize <- choose (minFrameSize, maxFrameSize) 
         label     <- genLabelBelow H
-        let (block, m') = alloc frameSize label bot (Atom (VInt 0) bot) m
+        let Just (block, m') = alloc frameSize label bot (Atom (VInt 0) bot) m --Assume frameSize > 0 
         aux (n-1) (m', (block, frameSize - n) : l)
   noFrames <- choose (minFrames, maxFrames) 
   aux noFrames (Memory.empty, [])
