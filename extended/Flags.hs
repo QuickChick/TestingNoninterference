@@ -7,6 +7,12 @@ data GenType = GenLLNI
              | GenSSNI
                deriving (Eq, Show, Read, Typeable, Data)
 
+{-
+data Mode = ModeQuickCheck
+          | ModePrintTable
+            deriving (Eq, Show, Read, Typeable, Data)
+-}
+
 data Flags = Flags { strategy :: GenType 
                    , noSteps  :: Int
                    , maxTests :: Int
@@ -22,7 +28,7 @@ defaultFlags = Flags { strategy = GenSSNI
                      , noSteps  = 2
                      , maxTests = 10000
                      , discardRatio = 5
-                     , showCounters = True
+                     , showCounters = False
                      , printLatex = False
-                     , timeout = 1
+                     , timeout = 10
                      , doShrink = False }

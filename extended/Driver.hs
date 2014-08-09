@@ -65,10 +65,10 @@ mkProperty f@Flags{..} t =
           forAllShrink (genVariationState f) shrinkF $ \v@(Var _ st _) ->
               propLLNI f t v .&&. propPreservesWellFormed t st
 
-ssniConfig :: Flags 
-ssniConfig = defaultFlags { strategy = GenSSNI , showCounters = False } 
-llniConfig :: Flags
-llniConfig = defaultFlags { strategy = GenLLNI , noSteps = 42 , showCounters = False}
+ssniConfig :: Flags -> Flags 
+ssniConfig f = f { strategy = GenSSNI }
+llniConfig :: Flags -> Flags
+llniConfig f = f { strategy = GenLLNI , noSteps = 42 }
 
 quickCheckN :: Int -> Property -> IO ()
 quickCheckN n = quickCheckWith stdArgs{maxSuccess = n}
@@ -210,23 +210,28 @@ printMTTF :: Maybe Rational -> String
 printMTTF Nothing = "----"
 printMTTF (Just x) = printf "%0.2f" (fromRational x :: Double)
 
-statsForTable :: RuleTable -> IO ()
-statsForTable table = do
-    let flags = [ssniConfig, llniConfig]
-    ssniCounters <- checkTimeoutProperty ssniConfig table
+statsForTable :: Flags -> IO ()
+statsForTable flags = do
+    putStrLn "\\begin{tabular}{ c c c }"
+    putStrLn "INSTR & SSNI & LLNI \\\\ "
+    mapM_ (statsForTableAux flags) $ mutateTable defaultTable
+    putStrLn "\\end{tabular}"
+
+statsForTableAux :: Flags -> RuleTable -> IO ()
+statsForTableAux f table = do
+    ssniCounters <- checkTimeoutProperty (ssniConfig f) table
     let ssniStats = computeMTTF ssniCounters
-    llniCounters <- checkTimeoutProperty llniConfig table
+    llniCounters <- checkTimeoutProperty (llniConfig f) table
     let llniStats = computeMTTF llniCounters
-    putStrLn $ showMutantTable table ++ " , "  
-             ++ printMTTF ssniStats ++ " , " 
-             ++ printMTTF llniStats
+    -- TODO: Figure out a way to add numbering in the mutatant table thingy
+    putStrLn $ showMutantTable table ++ " & "  
+             ++ printMTTF ssniStats ++ " & " 
+             ++ printMTTF llniStats ++ " \\\\ "
 
 main :: IO ()
 main = do
   flags <- cmdArgs defaultFlags
-  putStrLn $ show flags
-  putStrLn "INSTR , SSNI, LLNI "
-  mapM_ statsForTable $ mutateTable defaultTable
+  statsForTable flags
 --    putStrLn "Checking defaultTable: SSNI"
 --    quickCheckN 10000 $ mkProperty ssniConfig defaultTable
 --    putStrLn "Checking defaultTable: LLNI"
