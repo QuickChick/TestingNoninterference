@@ -10,7 +10,6 @@ data Pointer = Ptr Block Int
 
 data Value = VInt Int 
            | VPtr Pointer
---            | VCpt Int -- Leave Code Pointers out
            | VLab Label
              deriving (Eq, Show, Read)
 

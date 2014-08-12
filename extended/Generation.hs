@@ -261,6 +261,8 @@ class SmartVary a where
 instance SmartVary Value where
     smartVary _ info (VInt _) = liftM VInt $ smartGen info
     smartVary _ info (VPtr p) = liftM VPtr $ smartGen info
+-- CH: even if we don't have VCpt any more, could still try to turn
+-- valid code pointers more often into other code pointers
 --    smartVary _ info (VCpt p) = liftM VCpt $ choose (0, codeLen info - 1)
     smartVary _ info (VLab p) = liftM VLab $ smartGen info
 

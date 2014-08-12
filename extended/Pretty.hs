@@ -74,7 +74,6 @@ instance PP Value where
     pp (VInt x) = pp x
     pp (VPtr x) = pp x
     pp (VLab x) = pp x
---    pp (VCpt x) = PP.brackets $ pp x
 
 instance PP Atom where
     pp (Atom v l) = pp v <+> PP.char '@' <+> pp l

@@ -32,7 +32,6 @@ instance Arbitrary Value where
     shrink (VInt x) = map VInt $ shrink x
     shrink (VPtr x) = VInt 0 : (map VPtr $ shrink x)
     shrink (VLab x) = VInt 0 : (map VLab $ shrink x)
---    shrink (VCpt x) = VInt 0 : (map VCpt $ shrink x)
 
 instance Arbitrary Atom where
     arbitrary = error "No arbitrary atom"
@@ -89,8 +88,6 @@ instance ShrinkV Value where
         [Var obs (VInt x') (VInt x') | x' <- shrink x]
     shrinkV (Var obs (VPtr x) (VPtr _)) = 
         [Var obs (VPtr x') (VPtr x') | x' <- shrink x]
---    shrinkV (Var obs (VCpt x) (VCpt _)) = 
---        [Var obs (VCpt x') (VCpt x') | x' <- shrink x]
     shrinkV (Var obs (VLab x) (VLab _)) = 
         [Var obs (VLab x') (VLab x') | x' <- shrink x]
     shrinkV _ = error "Not indistinguishable Values (shrinkV Value)"

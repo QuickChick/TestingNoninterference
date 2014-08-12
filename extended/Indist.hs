@@ -32,7 +32,6 @@ instance Indist Value where
     indist _ (VInt x) (VInt y) = x == y
     indist _ (VLab x) (VLab y) = x == y
     indist _ (VPtr x) (VPtr y) = x == y
---    indist _ (VCpt x) (VCpt y) = x == y
     indist _ _ _ = False
               
 -- Atom indistinguishability
