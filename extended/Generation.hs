@@ -122,7 +122,7 @@ groupRegisters :: Int -> [Register] ->
                   ([RegPtr], [RegPtr], [RegPtr], [RegPtr])
 groupRegisters il [] dptr cptr num lab n = (dptr, cptr, num, lab)
 groupRegisters il (r:rs) dptr cptr num lab n 
-    | isCpt il r = groupRegisters il rs dptr (n : cptr) num lab (n + 1)
+    | isCpt il r = groupRegisters il rs dptr (n : cptr) (n : num) lab (n + 1)
     | isInt r = groupRegisters il rs dptr cptr (n : num) lab (n + 1)
     | isPtr r = groupRegisters il rs (n : dptr) cptr num lab (n + 1)
     | isLab r = groupRegisters il rs dptr cptr num (n : lab) (n + 1)
@@ -135,10 +135,9 @@ containsRet (Stack s) = not $ null s
 -- LL: TODO: Fix weights. AND DO SOMETHING ABOUT BRETS!
 ainstrSSNI :: State -> Gen Instr 
 ainstrSSNI st@State{..} = 
-    let (dptr, cptr, num', lab) = groupRegisters (length imem) 
+    let (dptr, cptr, num, lab) = groupRegisters (length imem) 
                                  (unRegSet regs) [] [] [] [] 0
         genRegPtr = choose (0, length (unRegSet regs) - 1)
-        num = num' ++ cptr
     in frequency $ 
            [(1, pure Noop)
            ,(0, pure Halt)
@@ -181,10 +180,9 @@ popInstrSSNI s@State{..} = do
 -- LL: TODO: Fix weights. AND DO SOMETHING ABOUT BRETS!
 ainstrLLNI :: State -> Gen Instr 
 ainstrLLNI st@State{..} = 
-    let (dptr, cptr, num', lab) = groupRegisters (length imem) 
+    let (dptr, cptr, num, lab) = groupRegisters (length imem) 
                                  (unRegSet regs) [] [] [] [] 0
         genRegPtr = choose (0, length (unRegSet regs) - 1)
-        num = num' ++ cptr
     in frequency $ 
            [(1, pure Noop)
            ,(0, pure Halt)
