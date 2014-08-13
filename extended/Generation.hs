@@ -109,7 +109,7 @@ isPtr (Atom (VPtr _) _) = True
 isPtr _ = False
 
 isCpt :: Int -> Atom -> Bool
-isCpt imemLen (Atom (VInt x) _) = x < imemLen
+isCpt imemLen (Atom (VInt x) _) = 0 <= x && x < imemLen
 isCpt _ _ = False
 
 isLab :: Atom -> Bool
