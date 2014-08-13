@@ -3,6 +3,8 @@ module Machine where
 
 import Control.Arrow
 
+import Debug.Trace
+
 import Rules
 import Labels
 import Instructions
@@ -165,6 +167,7 @@ exec' t s@(State {..}) instruction = do
       let result = VInt $ evalBinop o n1 n2 
           pc'    = PAtm (addrPc + 1) rlpc
       regs' <- writeR r3 (Atom result rlab) regs
+      {- traceShow (r1, r2, "L1", l1, "L2", l2, "RLAB", rlab) $ -} 
       return ([], s{regs = regs', pc = pc'})
     Noop -> do
       -- True, __, LabPC

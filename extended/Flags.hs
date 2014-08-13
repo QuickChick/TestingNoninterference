@@ -7,15 +7,15 @@ data GenType = GenLLNI
              | GenSSNI
                deriving (Eq, Show, Read, Typeable, Data)
 
-{-
-data Mode = ModeQuickCheck
+data QCMode = ModeQuickCheck
           | ModePrintTable
             deriving (Eq, Show, Read, Typeable, Data)
--}
 
-data Flags = Flags { strategy :: GenType 
+data Flags = Flags { mode :: QCMode
+                   , strategy :: GenType 
                    , noSteps  :: Int
                    , maxTests :: Int
+                   , mutantNo :: Maybe Int
                    , discardRatio :: Int
                    , showCounters :: Bool
                    , printLatex   :: Bool 
@@ -24,9 +24,11 @@ data Flags = Flags { strategy :: GenType
            deriving (Eq, Show, Read, Typeable, Data)
 
 defaultFlags :: Flags
-defaultFlags = Flags { strategy = GenSSNI
+defaultFlags = Flags { mode = ModeQuickCheck
+                     , strategy = GenSSNI
                      , noSteps  = 2
                      , maxTests = 10000
+                     , mutantNo = Nothing
                      , discardRatio = 5
                      , showCounters = False
                      , printLatex = False

@@ -181,9 +181,10 @@ popInstrSSNI s@State{..} = do
 -- LL: TODO: Fix weights. AND DO SOMETHING ABOUT BRETS!
 ainstrLLNI :: State -> Gen Instr 
 ainstrLLNI st@State{..} = 
-    let (dptr, cptr, num, lab) = groupRegisters (length imem) 
+    let (dptr, cptr, num', lab) = groupRegisters (length imem) 
                                  (unRegSet regs) [] [] [] [] 0
         genRegPtr = choose (0, length (unRegSet regs) - 1)
+        num = num' ++ cptr
     in frequency $ 
            [(1, pure Noop)
            ,(0, pure Halt)
@@ -388,6 +389,9 @@ populateMemory info mem =
 -- LL: Add stamp instantiation - was unneeded in Coq? Suspicious...
 instantiateStamps :: State -> Gen State 
 instantiateStamps = return 
+
+--defaultFlags :: Flags 
+--defaultFlags = Flags.defaultFlags
 
 genVariationState :: Flags -> Gen (Variation State)
 genVariationState flags = do 

@@ -228,10 +228,19 @@ statsForTableAux f table = do
              ++ printMTTF ssniStats ++ " & " 
              ++ printMTTF llniStats ++ " \\\\ "
 
+testSingle :: Flags -> IO ()
+testSingle f@Flags{..} =
+  let table = case mutantNo of
+                Nothing -> defaultTable
+                Just n  -> mutateTable defaultTable !! n in 
+  quickCheckN maxTests $ mkProperty f table
+
 main :: IO ()
 main = do
   flags <- cmdArgs defaultFlags
-  statsForTable flags
+  case mode flags of 
+    ModePrintTable -> statsForTable flags
+    ModeQuickCheck -> testSingle flags
 --    putStrLn "Checking defaultTable: SSNI"
 --    quickCheckN 10000 $ mkProperty ssniConfig defaultTable
 --    putStrLn "Checking defaultTable: LLNI"
