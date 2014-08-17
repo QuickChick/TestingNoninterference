@@ -120,10 +120,10 @@ checkProperty flags discardRef table microsecs = do
                 modifyIORef testsRun   (const $ St.numSuccessTests   s)
 
 data TestCounters 
-  = TestCounters { run_c            :: Int
-                 , bugs_c           :: Int
-                 , disc_c           :: Int
-                 , times_c          :: [Integer]
+  = TestCounters { run_c            :: !Int
+                 , bugs_c           :: !Int
+                 , disc_c           :: !Int
+                 , times_c          :: ![Integer]
                      -- Time spent on each bug find.
                  , extrapolated     :: Either () (Int,Int,Int)
                      -- Right (run,bugs,disc) if max bugs were hit before
@@ -233,7 +233,11 @@ testSingle f@Flags{..} =
   let table = case mutantNo of
                 Nothing -> defaultTable
                 Just n  -> mutateTable defaultTable !! n in 
-  quickCheckN maxTests $ mkProperty f table
+  quickCheckWith
+    stdArgs { maxSuccess      = maxTests     
+            , maxDiscardRatio = discardRatio 
+            , chatty          = showCounters && not printLatex }
+    $ mkProperty f table
 
 main :: IO ()
 main = do

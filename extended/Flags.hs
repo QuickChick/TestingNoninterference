@@ -11,6 +11,10 @@ data QCMode = ModeQuickCheck
           | ModePrintTable
             deriving (Eq, Show, Read, Typeable, Data)
 
+data CollectF = CollectInstrCode
+              | CollectNothing
+            deriving (Eq, Show, Read, Typeable, Data)
+
 data Flags = Flags { mode :: QCMode
                    , strategy :: GenType 
                    , noSteps  :: Int
@@ -20,7 +24,8 @@ data Flags = Flags { mode :: QCMode
                    , showCounters :: Bool
                    , printLatex   :: Bool 
                    , timeout      :: Int 
-                   , doShrink     :: Bool }
+                   , doShrink     :: Bool 
+                   , collectF     :: CollectF }
            deriving (Eq, Show, Read, Typeable, Data)
 
 defaultFlags :: Flags
@@ -33,4 +38,5 @@ defaultFlags = Flags { mode = ModeQuickCheck
                      , showCounters = False
                      , printLatex = False
                      , timeout = 10
-                     , doShrink = False }
+                     , doShrink = False 
+                     , collectF = CollectNothing }

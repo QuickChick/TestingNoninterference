@@ -28,7 +28,12 @@ testSSNI f t =
 
 propSSNI :: Flags -> RuleTable -> Variation State -> Property
 propSSNI f t (Var obs st1 st2) = 
---  collect (join $ fmap opcodeOfInstr $ instrLookup (imem st1) (pc st1)) $ 
+  let collect' = case collectF f of
+                   CollectInstrCode -> 
+                       collect (join $ fmap opcodeOfInstr 
+                                     $ instrLookup (imem st1) (pc st1))
+                   _ -> property 
+  in collect' $
   let isLowState st = isLow (pcLab $ pc st) obs in
   if indist obs st1 st2 then 
       case exec t st1 of 
@@ -36,7 +41,9 @@ propSSNI f t (Var obs st1 st2) =
             if isLowState st1 then
                 case exec t st2 of 
                   Just (tr2, st2') ->
-                      collect "LOW -> LOW" $ 
+                      property $ 
+--                      collect "LOW -> LOW" $ 
+
                       -- Both took a low step
 {-                        whenFail (putStrLn $ PP.render 
                                  $ text "Low Step\nStarting State:\n" $$ 
@@ -47,7 +54,7 @@ propSSNI f t (Var obs st1 st2) =
                       && indist obs st1' st2'
                   Nothing -> 
                       -- 1 took a low step and 2 failed
-                      collect "LOW ->*, 2 X" $ property rejected
+                      {- collect "LOW ->*, 2 X" $ -} property rejected
             else -- st1 is High
                 if isLowState st1' then
                     case exec t st2 of 
@@ -60,11 +67,12 @@ propSSNI f t (Var obs st1 st2) =
                                    text "Ending State:\n" $$ 
                                    pp (Var obs st1' st2')) $ 
 -}
-                              collect "High -> Low" $ 
+--                              collect "High -> Low" $ 
+                              property $
                               observeComp (observe obs tr1) (observe obs tr2)
                               && indist obs st1' st2'
                           else -- 1 High -> Low, 2 -> High -> High. Check 2
-                              collect "High -> High" $ 
+                              property $ --collect "High -> High" $ 
                               (observe obs tr2) == []
                               && indist obs st2 st2'
                       Nothing ->
@@ -76,7 +84,7 @@ propSSNI f t (Var obs st1 st2) =
                                 pp (Var obs st1 st1') $$ 
                                 (text . show $ indist obs st1 st1')
                              ) $ -}
-                    collect "High -> High" $ 
+                    property $ --collect "High -> High" $ 
                     observe obs tr1 == [] && indist obs st1 st1'
         Nothing -> property rejected -- 1 Failed
   else -- not indistinguishable!

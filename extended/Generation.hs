@@ -139,8 +139,8 @@ ainstrSSNI st@State{..} =
                                  (unRegSet regs) [] [] [] [] 0
         genRegPtr = choose (0, length (unRegSet regs) - 1)
     in frequency $ 
-           [(1, pure Noop)
-           ,(0, pure Halt)
+           [(5, pure Noop)
+--           ,(0, pure Halt)
            ,(10, liftM PcLab genRegPtr)
            ,(10, liftM2 Lab genRegPtr genRegPtr)] ++
            [(10, liftM2 MLab (elements dptr) genRegPtr) | not $ null dptr] ++
@@ -151,12 +151,12 @@ ainstrSSNI st@State{..} =
            [(10, liftM PutBot genRegPtr)] ++
            [(10, liftM3 BCall (elements cptr) (elements lab) genRegPtr)
             | not $ null lab || null cptr ] ++
-           [(100, pure BRet) | containsRet stack] ++
-           [(50, liftM3 Alloc (elements num) (elements lab) genRegPtr)
+           [(20, pure BRet) | containsRet stack] ++
+           [(13, liftM3 Alloc (elements num) (elements lab) genRegPtr)
             | not $ null num || null lab] ++
-           [(10, liftM2 Load (elements dptr) genRegPtr) 
+           [(13, liftM2 Load (elements dptr) genRegPtr) 
             | not $ null dptr] ++
-           [(100, liftM2 Store (elements dptr) genRegPtr)
+           [(30, liftM2 Store (elements dptr) genRegPtr)
             | not $ null dptr] ++
            [(10, liftM Jump (elements cptr)) | not $ null cptr] ++
            [(10, liftM2 Bnz (choose (-1, 2)) (elements num))
