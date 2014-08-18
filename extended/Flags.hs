@@ -3,12 +3,17 @@ module Flags where
 
 import System.Console.CmdArgs
 
-data GenType = GenLLNI
-             | GenSSNI
+data GenType = GenByExec
+             | GenTinySSNI
                deriving (Eq, Show, Read, Typeable, Data)
 
+data TestProperty = TestLLNI
+                  | TestSSNI
+                  | TestMSNI
+            deriving (Eq, Show, Read, Typeable, Data)
+
 data QCMode = ModeQuickCheck
-          | ModePrintTable
+            | ModePrintTable
             deriving (Eq, Show, Read, Typeable, Data)
 
 data CollectF = CollectInstrCode
@@ -17,6 +22,7 @@ data CollectF = CollectInstrCode
 
 data Flags = Flags { mode :: QCMode
                    , strategy :: GenType 
+                   , testProp :: TestProperty
                    , noSteps  :: Int
                    , maxTests :: Int
                    , mutantNo :: Maybe Int
@@ -30,7 +36,8 @@ data Flags = Flags { mode :: QCMode
 
 defaultFlags :: Flags
 defaultFlags = Flags { mode = ModeQuickCheck
-                     , strategy = GenSSNI
+                     , strategy = GenTinySSNI
+                     , testProp = TestSSNI
                      , noSteps  = 2
                      , maxTests = 10000
                      , mutantNo = Nothing
@@ -40,3 +47,12 @@ defaultFlags = Flags { mode = ModeQuickCheck
                      , timeout = 10
                      , doShrink = False 
                      , collectF = CollectNothing }
+
+ssniConfig :: Flags -> Flags 
+ssniConfig f = f { strategy = GenTinySSNI , testProp = TestSSNI }
+llniConfig :: Flags -> Flags
+llniConfig f = f { strategy = GenByExec , testProp = TestLLNI , noSteps = 42 }
+msniConfig :: Flags -> Flags
+msniConfig f = f { strategy = GenByExec , testProp = TestMSNI , noSteps = 42 }
+
+

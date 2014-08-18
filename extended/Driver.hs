@@ -13,6 +13,7 @@ import SanityChecks
 import Generation
 import SSNI
 import LLNI
+import MSNI
 import Rules
 import Mutate
 import Flags
@@ -57,18 +58,16 @@ checkMutants flags = do
 mkProperty :: Flags -> RuleTable -> Property
 mkProperty f@Flags{..} t = 
     let shrinkF = if doShrink then shrinkV else const [] in
-    case strategy of
-      GenSSNI -> 
+    case testProp of
+      TestSSNI -> 
           forAllShrink (genVariationState f) shrinkF $ \v@(Var _ st _) -> 
               propSSNI f t v .&&. propPreservesWellFormed t st
-      GenLLNI -> 
+      TestLLNI -> 
           forAllShrink (genVariationState f) shrinkF $ \v@(Var _ st _) ->
               propLLNI f t v .&&. propPreservesWellFormed t st
-
-ssniConfig :: Flags -> Flags 
-ssniConfig f = f { strategy = GenSSNI }
-llniConfig :: Flags -> Flags
-llniConfig f = f { strategy = GenLLNI , noSteps = 42 }
+      TestMSNI -> 
+          forAllShrink (genVariationState f) shrinkF $ \v@(Var _ st _) ->
+              propMSNI f t v .&&. propPreservesWellFormed t st
 
 quickCheckN :: Int -> Property -> IO ()
 quickCheckN n = quickCheckWith stdArgs{maxSuccess = n}
@@ -212,8 +211,8 @@ printMTTF (Just x) = printf "%0.2f" (fromRational x :: Double)
 
 statsForTable :: Flags -> IO ()
 statsForTable flags = do
-    putStrLn "\\begin{tabular}{ c c c }"
-    putStrLn "INSTR & SSNI & LLNI \\\\ "
+    putStrLn "\\begin{tabular}{ c c c c }"
+    putStrLn "INSTR & SSNI & LLNI & MSNI \\\\ "
     mapM_ (statsForTableAux flags) $ mutateTable defaultTable
     putStrLn "\\end{tabular}"
 
@@ -223,10 +222,13 @@ statsForTableAux f table = do
     let ssniStats = computeMTTF ssniCounters
     llniCounters <- checkTimeoutProperty (llniConfig f) table
     let llniStats = computeMTTF llniCounters
+    msniCounters <- checkTimeoutProperty (msniConfig f) table
+    let msniStats = computeMTTF msniCounters
     -- TODO: Figure out a way to add numbering in the mutatant table thingy
     putStrLn $ showMutantTable table ++ " & "  
              ++ printMTTF ssniStats ++ " & " 
-             ++ printMTTF llniStats ++ " \\\\ "
+             ++ printMTTF llniStats ++ " & " 
+             ++ printMTTF msniStats ++ " \\\\ "
 
 testSingle :: Flags -> IO ()
 testSingle f@Flags{..} =

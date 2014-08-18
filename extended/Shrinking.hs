@@ -5,6 +5,8 @@ import Control.Monad
 
 import Test.QuickCheck
 
+import Data.List
+
 import Primitives
 import Machine
 import Instructions
@@ -128,12 +130,12 @@ instance ShrinkV (Frame Atom) where
                  | f1' <- shrinkFrameLabel f1 ++ shrinkFrameAtoms f1,
                    f2' <- shrinkFrameLabel f2 ++ shrinkFrameAtoms f2]
         | isHigh (st1 `lub` l1) obs && isHigh (st2 `lub` l2) obs =
-            concatMap (\l -> 
+            concatMap (\l ->         
                   if isLow (st1 `lub` l) obs then 
                     [Var obs (Frame st1 l as1) (Frame st1 l as1),
                      Var obs (Frame st1 l as2) (Frame st1 l as2)]
                   else [Var obs (Frame st1 l as1) (Frame st1 l as2)]
-                  ) (shrink l1) ++ -- l1 == l2
+                   ) (shrink l1) ++ -- l1 == l2
             [Var obs f1' f2' | f1' <- shrinkFrameAtoms f1, 
                                f2' <- shrinkFrameAtoms f2] 
         | otherwise = 
@@ -143,6 +145,17 @@ instance ShrinkV (Frame Atom) where
              ) (shrink l1) ++ -- l1 == l2
             [Var obs (Frame st1 l1 as1') (Frame st2 l2 as2') 
                  | Var obs as1' as2' <- shrinkV (Var obs as1 as2)]
+
+instance ShrinkV (Mem Atom) where
+    shrinkV (Var obs m1 m2) = 
+        let lowB1 = getAllBlocks obs m1
+            lowB2 = getAllBlocks obs m2
+            highLabs = (labelsBelow H) \\ (labelsBelow obs) 
+            highB1 = concatMap (getBlocksAtLevel m1) highLabs
+            highB2 = concatMap (getBlocksAtLevel m2) highLabs
+            low1 = map (ap (,) $ getFrame m1) lowB1
+            low2 = map (ap (,) $ getFrame m2) lowB2
+        in undefined
 
 ------ Shrink Stacks ------
 
@@ -233,11 +246,15 @@ removeRegisters (Var obs st1 st2) =
 
 --- Shrink Register Contents --- 
 
+-- Should only be done when pc's are low
 shrinkRegisterContentsV :: Variation State -> [Variation State]
 shrinkRegisterContentsV (Var obs st1 st2) = 
-    [ Var obs st1{regs = RegSet regs1'} st2{regs = RegSet regs2'} 
-          | Var obs regs1' regs2' 
-              <- shrinkV $ Var obs (unRegSet $ regs st1) (unRegSet $ regs st2)]
+    if isLow (pcLab $ pc st1) obs && isLow (pcLab $ pc st2) obs then
+    [ Var obs st1{regs = RegSet regs1'} 
+              st2{regs = RegSet regs2'} 
+    | Var obs regs1' regs2' 
+        <- shrinkV $ Var obs (unRegSet $ regs st1) (unRegSet $ regs st2)]
+    else []
 
 --- Shrink Instructions --- 
 
@@ -256,8 +273,8 @@ shrinkInstructionsV (Var obs st1 st2) =
 
 instance ShrinkV State where
     shrinkV v@(Var obs st1 st2) = 
-        removeRegisters v ++ shrinkStacks v
+        removeRegisters v 
+        ++ shrinkStacks v
         ++ shrinkRegisterContentsV v
         ++ shrinkInstructionsV v
-        
     

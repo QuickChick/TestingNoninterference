@@ -16,5 +16,5 @@ stateOfVar (Var _ s _) = s
 
 instance Arbitrary State where
     arbitrary = liftM stateOfVar . genVariationState $ 
-                defaultFlags { strategy = GenLLNI }
+                defaultFlags { strategy = GenByExec }
     shrink x = filter (/= x) $ map stateOfVar $  shrinkV (Var H x x)

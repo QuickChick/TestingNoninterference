@@ -76,8 +76,8 @@ instance SmartGen Atom where
 instance SmartGen PtrAtom where
     smartGen info@(MkInfo Flags{..} cl _ _) = do
         case strategy of 
-          GenLLNI -> liftM (PAtm 0) (smartGen info)
-          GenSSNI -> liftM2 PAtm (choose (0, cl - 1)) (smartGen info)
+          GenByExec -> liftM (PAtm 0) (smartGen info)
+          GenTinySSNI -> liftM2 PAtm (choose (0, cl - 1)) (smartGen info)
 
 instance SmartGen RegSet where
     smartGen info = fmap RegSet $ vectorOf (noRegs info) (smartGen info)
@@ -184,7 +184,7 @@ ainstrLLNI st@State{..} =
                                  (unRegSet regs) [] [] [] [] 0
         genRegPtr = choose (0, length (unRegSet regs) - 1)
     in frequency $ 
-           [(1, pure Noop)
+           [(7, pure Noop)
            ,(0, pure Halt)
            ,(10, liftM PcLab genRegPtr)
            ,(10, liftM2 Lab genRegPtr genRegPtr)] ++
@@ -249,8 +249,8 @@ popInstrLLNI table s@State{..} = do
 popInstr :: Flags -> State -> Gen State
 popInstr Flags{..} s =
     case strategy of 
-      GenSSNI -> popInstrSSNI s
-      GenLLNI -> popInstrLLNI defaultTable s
+      GenTinySSNI -> popInstrSSNI s
+      GenByExec   -> popInstrLLNI defaultTable s
 
 ------------------------- VARIATIONS --------------------------
 
@@ -354,8 +354,8 @@ data Parameters = Parameters { minFrames :: Int
 getParameters :: Flags -> Parameters 
 getParameters Flags{..} =
     case strategy of
-      GenSSNI -> Parameters 2 2 2 2 2 2 10
-      GenLLNI -> Parameters 2 4 2 8 5 42 10
+      GenTinySSNI -> Parameters 2 2 2 2 2 2 10
+      GenByExec   -> Parameters 2 4 2 8 5 noSteps 10
 
 -- Stamps start out bottom. Fill them up later!
 genInitMem :: Flags -> Gen (Memory, [(Block, Int)]) 

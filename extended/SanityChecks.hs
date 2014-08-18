@@ -8,6 +8,10 @@ import Machine
 import Reachability
 import Rules
 import SingleStateArb()
+import Primitives
+import Indist
+import Generation
+import Flags
 
 --import Pretty
 --import Text.PrettyPrint (text,($$))
@@ -30,3 +34,9 @@ propPreservesWellFormed t st =
                    ) $ -} 
                        wellFormed st'
       Nothing -> property rejected
+
+propGenIndist :: Property
+propGenIndist = forAll (genVariationState (llniConfig defaultFlags)) aux 
+    where aux :: Variation State -> Bool
+          aux (Var obs st1 st2) = indist obs st1 st2
+
