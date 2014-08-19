@@ -253,7 +253,7 @@ main = do
 --    cs <- checkTimeoutProperty llniConfig defaultTable
 --    putStrLn $ show cs
 --    quickCheckN 10000 $ mkProperty llniConfig defaultTable
---    putStrLn "Checking Mutants with SSNI"
---    checkMutants ssniConfig
---    putStrLn "Checking Mutants with LLNI"
---    checkMutants llniConfig
+  -- putStrLn "Checking Mutants with SSNI"
+  -- checkMutants (ssniConfig flags)
+  -- putStrLn "Checking Mutants with LLNI"
+  -- checkMutants (llniConfig flags)

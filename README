@@ -1,11 +1,12 @@
 
 -= Prerequisites =-
 - GHC 7.6.x (known to work with 7.6.3)
+  -- CH: I'm on 7.8.3, but code/basic doesn't compile because of DynFlags
 - QuickCheck 2.7.x (known to work with 2.7.3)
+- Haskell package: CmdArgs >0.9.5 (available with 'cabal install cmdargs')
+- Haskell package: concurrent-extra (available with 'cabal install concurrent-extra')
 - make (can be found as part of MinGW, in ...\MinGW\msys\1.0\bin under Windows)
 - other UNIX utilities like echo, rm, etc.
-- Haskell package: CmdArgs 0.9.5 and above (available with 'cabal install cmdargs')
-- Haskell package: concurrent-extra (available with 'cabal install concurrent-extra')
 
 -= Contents =-
 
