@@ -27,9 +27,8 @@ import qualified Text.PrettyPrint as PP
 propLLNI :: Flags -> RuleTable -> Variation State -> Property
 propLLNI Flags{..} t (Var obs st1 st2) =
 --    traceShow ("Here!") $
-    let (tr1, sts1) = execN noSteps t st1
-        (tr2, sts2) = execN noSteps t st2
-        tracesOK = observeComp (observe obs tr1) (observe obs tr2)
+    let sts1 = execN noSteps t st1
+        sts2 = execN noSteps t st2
         isLowState st = isLow (pcLab $ pc st) obs
         sts1' = filter isLowState sts1
         sts2' = filter isLowState sts2
@@ -40,7 +39,7 @@ propLLNI Flags{..} t (Var obs st1 st2) =
                             putStrLn . PP.render $ pp v) $ zipWith (Var obs) sts1' sts2')-}
       property
 --    in property $ --whenFail (putStrLn (show sts1') >> putStrLn (show sts2')) $
-       $ tracesOK && (and $ zipWith (indist obs) sts1' sts2')
+       $ (and $ zipWith (indist obs) sts1' sts2')
 
 testLLNI :: Flags -> RuleTable -> Property
 testLLNI f t = 

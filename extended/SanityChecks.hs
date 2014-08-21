@@ -24,7 +24,7 @@ propPreservesWellFormed :: RuleTable -> State -> Property
 propPreservesWellFormed t st =
     wellFormed st ==> 
     case exec t st of 
-      Just (_, st') -> property $ 
+      Just st' -> property $ 
 {-          whenFail (putStrLn . PP.render $ 
                        text "Not well formed:" $$ 
                        text "Original State:" $$

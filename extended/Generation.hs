@@ -148,7 +148,7 @@ ainstrSSNI st@State{..} =
             | not $ null lab] ++
            [(10, liftM3 LJoin (elements lab) (elements lab) genRegPtr)
             | not $ null lab] ++
-           [(10, liftM PutBot genRegPtr)] ++
+           [(10, liftM2 PutLab (genLabelBelow H) genRegPtr)] ++
            [(10, liftM3 BCall (elements cptr) (elements lab) genRegPtr)
             | not $ null lab || null cptr ] ++
            [(20, pure BRet) | containsRet stack] ++
@@ -161,7 +161,6 @@ ainstrSSNI st@State{..} =
            [(10, liftM Jump (elements cptr)) | not $ null cptr] ++
            [(10, liftM2 Bnz (choose (-1, 2)) (elements num))
             | not $ null num] ++
-           [(10, liftM Output (elements num)) | not $ null num] ++
            [(10, liftM3 PSetOff (elements dptr) (elements num) genRegPtr)
             | not $ null dptr || null num] ++
            [(10, liftM2 Put arbitrary genRegPtr)] ++
@@ -169,7 +168,9 @@ ainstrSSNI st@State{..} =
             | not $ null num] ++
            [(10, liftM2 MSize (elements dptr) genRegPtr) | not $ null dptr] ++
            [(10, liftM2 PGetOff (elements dptr) genRegPtr) 
-            | not $ null dptr]
+            | not $ null dptr] ++
+           [(10, liftM2 Mov genRegPtr genRegPtr)]
+
 
 popInstrSSNI :: State -> Gen State 
 popInstrSSNI s@State{..} = do 
@@ -193,7 +194,7 @@ ainstrLLNI st@State{..} =
             | not $ null lab] ++
            [(10, liftM3 LJoin (elements lab) (elements lab) genRegPtr)
             | not $ null lab] ++
-           [(10, liftM PutBot genRegPtr)] ++
+           [(10, liftM2 PutLab (genLabelBelow H) genRegPtr)] ++
            [(10, liftM3 BCall (elements cptr) (elements lab) genRegPtr)
             | not $ null lab || null cptr ] ++
            [(10, pure BRet) | containsRet stack] ++
@@ -206,7 +207,6 @@ ainstrLLNI st@State{..} =
            [(10, liftM Jump (elements cptr)) | not $ null cptr] ++
            [(10, liftM2 Bnz (choose (-1, 2)) (elements num))
             | not $ null num] ++
-           [(10, liftM Output (elements num)) | not $ null num] ++
            [(10, liftM3 PSetOff (elements dptr) (elements num) genRegPtr)
             | not $ null dptr || null num] ++
            [(10, liftM2 Put arbitrary genRegPtr)] ++
@@ -214,7 +214,8 @@ ainstrLLNI st@State{..} =
             | not $ null num] ++
            [(10, liftM2 MSize (elements dptr) genRegPtr) | not $ null dptr] ++
            [(10, liftM2 PGetOff (elements dptr) genRegPtr) 
-            | not $ null dptr]
+            | not $ null dptr] ++
+           [(10, liftM2 Mov genRegPtr genRegPtr)]
 
 copyInstructions :: Zipper (Maybe Instr) -> State -> State 
 copyInstructions z s = s{imem = map (fromMaybe Noop) (toList z)}
@@ -230,7 +231,7 @@ genExecHelper table s0 s tries zipper = {- trace "GenExec" $ -} do
                      return (zipper{current=Just i}, i)
                    Just i -> return (zipper,i)
   case exec' table s i of
-    Just (_, s') -> 
+    Just s' -> 
 --       traceShow ("Executed", s ,s') $
         let (PAtm addr _) = (pc s') in
         case moveZipper zipper' addr of

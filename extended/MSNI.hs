@@ -30,11 +30,9 @@ testMSNI f t =
 
 propMSNI :: Flags -> RuleTable -> Variation State -> Property
 propMSNI f t (Var obs st1 st2) = 
-    let (tr1, sts1) = execN (noSteps f) t st1
-        (tr2, sts2) = execN (noSteps f) t st2
-        tracesOK = observeComp (observe obs tr1) (observe obs tr2)
-    in indist obs st1 st2 ==> tracesOK && msniAux f obs st1 st2 (tail sts1)
-       (tail sts2)
+    let sts1 = execN (noSteps f) t st1
+        sts2 = execN (noSteps f) t st2
+    in indist obs st1 st2 ==> msniAux f obs st1 st2 (tail sts1) (tail sts2)
 
 isLowState :: Label -> State -> Bool
 isLowState obs st = isLow (pcLab $ pc st) obs

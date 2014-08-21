@@ -208,7 +208,7 @@ decrRegInstr r i =
       BRet             -> BRet
       FlowsTo r1 r2 r3 -> FlowsTo (cDecr r r1) (cDecr r r2) (cDecr r r3)
       LJoin r1 r2 r3   -> LJoin   (cDecr r r1) (cDecr r r2) (cDecr r r3)
-      PutBot r1        -> PutBot  (cDecr r r1) 
+      PutLab l r1      -> PutLab  l (cDecr r r1) 
       Noop             -> Noop
       Put n r1         -> Put n   (cDecr r r1)
       BinOp o r1 r2 r3 -> BinOp o (cDecr r r1) (cDecr r r2) (cDecr r r3)
@@ -218,10 +218,10 @@ decrRegInstr r i =
       Store r1 r2      -> Store   (cDecr r r1) (cDecr r r2)
       Alloc r1 r2 r3   -> Alloc   (cDecr r r1) (cDecr r r2) (cDecr r r3)
       PSetOff r1 r2 r3 -> PSetOff (cDecr r r1) (cDecr r r2) (cDecr r r3)
-      Output r1        -> Output  (cDecr r r1)
       Halt             -> Halt
       MSize r1 r2      -> MSize   (cDecr r r1) (cDecr r r2)
       PGetOff r1 r2    -> PGetOff (cDecr r r1) (cDecr r r2)
+      Mov r1 r2        -> Mov     (cDecr r r1) (cDecr r r2)
 
 removeRegStkElt :: RegPtr -> StkElt -> StkElt
 removeRegStkElt r' (StkElt (pc,l,rs,r)) = 

@@ -19,7 +19,7 @@ data State = State { imem  :: IMem
 
 -- Execution - for now "correct"
 -- I tried to get all the changing parts inside a let for easier tweaking later
-exec' :: RuleTable -> State -> Instr -> Maybe (Trace, State)
+exec' :: RuleTable -> State -> Instr -> Maybe State
 exec' t s@(State {..}) instruction = do
   let (PAtm addrPc lpc) = pc 
   case instruction of 
@@ -30,14 +30,14 @@ exec' t s@(State {..}) instruction = do
       let result = VLab k
           pc'    = PAtm (addrPc + 1) rlpc
       regs' <- writeR r2 (Atom result rlab) regs
-      return ([], s{regs = regs', pc = pc'})
+      return s{regs = regs', pc = pc'}
     PcLab r1 -> do
       -- TRUE, BOT, LabPC
       (Just rlab, rlpc) <- runTMU t PCLAB [] lpc
       let result = VLab $ pcLab pc
           pc'    = PAtm (addrPc + 1) rlpc
       regs' <- writeR r1 (Atom result rlab) regs
-      return ([], s{regs = regs', pc = pc'})
+      return s{regs = regs', pc = pc'}
     MLab r1 r2 -> do
       -- TRUE, k, LabPC
       Atom (VPtr ptr) k <- readR r1 regs
@@ -46,7 +46,7 @@ exec' t s@(State {..}) instruction = do
       let result = VLab c
           pc'    = PAtm (addrPc + 1) rlpc
       regs' <- writeR r2 (Atom result rlab) regs
-      return ([], s{regs = regs', pc = pc'})
+      return s{regs = regs', pc = pc'}
     FlowsTo r1 r2 r3 -> do
       -- True, Join k1 k2, LabPC
       Atom (VLab l1) k1 <- readR r1 regs
@@ -55,7 +55,7 @@ exec' t s@(State {..}) instruction = do
       let result = VInt $ flows l1 l2 
           pc'    = PAtm (addrPc + 1) rlpc
       regs' <- writeR r3 (Atom result rlab) regs
-      return ([], s{regs = regs', pc = pc'})
+      return s{regs = regs', pc = pc'}
     LJoin r1 r2 r3 -> do
       -- True, Join k1 k2, LabPC                     
       Atom (VLab l1) k1 <- readR r1 regs
@@ -64,14 +64,14 @@ exec' t s@(State {..}) instruction = do
       let result = VLab $ l1 `lub` l2 
           pc'    = PAtm (addrPc + 1) rlpc
       regs' <- writeR r3 (Atom result rlab) regs
-      return ([], s{regs = regs', pc = pc'})
-    PutBot r1 -> do
+      return s{regs = regs', pc = pc'}
+    PutLab l r1 -> do
       -- True, BOT, LabPC
-      (Just rlab, rlpc) <- runTMU t PUTBOT [] lpc
-      let result = VLab bot 
+      (Just rlab, rlpc) <- runTMU t PUTLAB [] lpc
+      let result = VLab l
           pc'    = PAtm (addrPc + 1) rlpc
       regs' <- writeR r1 (Atom result rlab) regs
-      return ([], s{regs = regs', pc = pc'})
+      return s{regs = regs', pc = pc'}
     BCall r1 r2 r3 -> do
       -- True, Join k LabPC, Join l LabPC
       Atom (VInt addr) l <- readR r1 regs
@@ -80,7 +80,7 @@ exec' t s@(State {..}) instruction = do
       let stack' = Stack $  (StkElt (PAtm (addrPc + 1) rlab, b, regs, r3)) 
                     : unStack stack
           pc'    = PAtm addr rlpc
-      return ([], s{stack = stack', pc = pc'})
+      return s{stack = stack', pc = pc'}
     BRet -> do
       -- LE (Join r LabPC) (Join b lpc'), b, lpc'
       case unStack stack of 
@@ -90,7 +90,7 @@ exec' t s@(State {..}) instruction = do
           let result = a
               pc'    = PAtm addrPc' rlpc
           regs' <- writeR retR (Atom result rlab) saved
-          return ([], s{stack = Stack stack', pc = pc', regs = regs'})
+          return s{stack = Stack stack', pc = pc', regs = regs'}
         _ -> Nothing
     Alloc r1 r2 r3 -> do
       -- True, Join Lab1 Lab2, LabPC
@@ -102,7 +102,7 @@ exec' t s@(State {..}) instruction = do
       let result = VPtr $ Ptr block 0
           pc'    = PAtm (addrPc + 1) rlpc
       regs' <- writeR r3 (Atom result rlab) regs
-      return ([], s{mem = mem', regs = regs', pc = pc'})
+      return s{mem = mem', regs = regs', pc = pc'}
     Load r1 r2 -> do
       -- True, l, Join LabPc (Join k c)
       Atom (VPtr p) k <- readR r1 regs
@@ -112,7 +112,7 @@ exec' t s@(State {..}) instruction = do
       let result = v
           pc'    = PAtm (addrPc + 1) rlpc
       regs' <- writeR r2 (Atom v rlab) regs
-      return ([], s{regs = regs', pc = pc'})
+      return s{regs = regs', pc = pc'}
     Store r1 r2 -> do
       -- LE (Join k LabPC) c, l, LabPC
       Atom (VPtr p) k <- readR r1 regs
@@ -122,20 +122,20 @@ exec' t s@(State {..}) instruction = do
       let result = v
           pc'    = PAtm (addrPc + 1) rlpc
       mem' <- store mem p (Atom v rlab)
-      return ([], s{mem = mem', pc = pc'})
+      return s{mem = mem', pc = pc'}
     Jump r1 -> do
       -- True, __ , Join LabPC l
       Atom (VInt addr) l <- readR r1 regs
       (_, rlpc) <- runTMU t JUMP [l] lpc
       let pc'    = PAtm addr rlpc
-      return ([], s{pc = pc'})
+      return s{pc = pc'}
     Bnz n r1 -> do
       -- True, __, Join k LabPC
       Atom (VInt m) k <- readR r1 regs
       (_, rlpc) <- runTMU t BNZ [k] lpc
       let addr' = if m == 0 then addrPc + 1 else addrPc + n
           pc'    = PAtm addr' rlpc
-      return ([], s{pc = pc'})
+      return s{pc = pc'}
     PSetOff r1 r2 r3 -> do
       -- True, Join k1 k2, LabPC
       Atom (VPtr (Ptr fp addr)) k1 <- readR r1 regs
@@ -144,21 +144,14 @@ exec' t s@(State {..}) instruction = do
       let result = VPtr (Ptr fp n)
           pc'    = PAtm (addrPc + 1) rlpc
       regs' <- writeR r3 (Atom result rlab) regs
-      return ([], s{regs = regs', pc = pc'})
-    Output r1 -> do
-      -- True, Join k LabPC, LabPC
-      Atom (VInt n) k <- readR r1 regs
-      (Just rlab, rlpc) <- runTMU t OUTPUT [k] lpc
-      let result = VInt n
-          pc'    = PAtm (addrPc + 1) rlpc
-      return ([(result, rlab)], s{pc = pc'})
+      return s{regs = regs', pc = pc'}
     Put x r1 -> do
       -- True, BOT, LabPC
       (Just rlab, rlpc) <- runTMU t PUT [] lpc
       let result = VInt x
           pc'    = PAtm (addrPc + 1) rlpc
       regs' <- writeR r1 (Atom result rlab) regs
-      return ([], s{regs = regs', pc = pc'})
+      return s{regs = regs', pc = pc'}
     BinOp o r1 r2 r3 -> do
       -- True, Join l1 l2, LabPC
       Atom (VInt n1) l1 <- readR r1 regs
@@ -168,12 +161,12 @@ exec' t s@(State {..}) instruction = do
           pc'    = PAtm (addrPc + 1) rlpc
       regs' <- writeR r3 (Atom result rlab) regs
       {- traceShow (r1, r2, "L1", l1, "L2", l2, "RLAB", rlab) $ -} 
-      return ([], s{regs = regs', pc = pc'})
+      return s{regs = regs', pc = pc'}
     Noop -> do
       -- True, __, LabPC
       (_, rlpc) <- runTMU t NOOP [] lpc
       let pc'    = PAtm (addrPc + 1) rlpc
-      return ([], s{pc = pc'})
+      return s{pc = pc'}
     MSize r1 r2 -> do
       -- True, c, Join LabPC k
       Atom (VPtr p) k <- readR r1 regs
@@ -183,7 +176,7 @@ exec' t s@(State {..}) instruction = do
       let result = VInt n
           pc'    = PAtm (addrPc + 1) rlpc
       regs' <- writeR r2 (Atom result rlab) regs
-      return ([], s{regs = regs', pc = pc'})
+      return s{regs = regs', pc = pc'}
     PGetOff r1 r2 -> do
       -- True, k, LabPC
       Atom (VPtr (Ptr fp addr')) k <- readR r1 regs
@@ -191,19 +184,27 @@ exec' t s@(State {..}) instruction = do
       let result = VInt addr'
           pc'    = PAtm (addrPc + 1) rlpc
       regs' <- writeR r2 (Atom result rlab) regs
-      return ([], s{regs = regs', pc = pc'})
+      return s{regs = regs', pc = pc'}
+    Mov r1 r2 -> do
+      -- True, k, LabPC
+      Atom a k <- readR r1 regs
+      (Just rlab, rlpc) <- runTMU t MOV [k] lpc
+      let result = Atom a rlab
+          pc'    = PAtm (addrPc + 1) rlpc
+      regs' <- writeR r2 result regs
+      return s{regs = regs', pc = pc'}
     Halt -> Nothing
 
-exec :: RuleTable -> State -> Maybe (Trace, State)
+exec :: RuleTable -> State -> Maybe State
 exec r s@State{..} = do 
   instruction <- instrLookup imem pc
   exec' r s instruction
 
-execN :: Int -> RuleTable -> State -> (Trace, [State])
-execN 0 t s = ([], [s])
+execN :: Int -> RuleTable -> State -> [State]
+execN 0 t s = [s]
 execN n t s = case exec t s of
-                Just (tr, s') -> ((tr ++) *** (s :)) $ execN (n-1) t s'
-                Nothing -> ([], [s])
+                Just s' -> s : execN (n-1) t s'
+                Nothing -> [s]
 
 -- All Values should be Ints
 observe :: Label -> Trace -> [Value]

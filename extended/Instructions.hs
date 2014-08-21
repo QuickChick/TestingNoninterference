@@ -1,6 +1,8 @@
 {-# LANGUAGE TupleSections, RecordWildCards #-}
 module Instructions where
 
+import Labels
+
 type RegPtr = Int
 
 data BinOpT = BAdd | BMult deriving (Eq, Show, Read)
@@ -17,7 +19,7 @@ data Instr = Lab     RegPtr RegPtr
            | BRet   
            | FlowsTo RegPtr RegPtr RegPtr
            | LJoin   RegPtr RegPtr RegPtr
-           | PutBot  RegPtr
+           | PutLab  Label  RegPtr
            | Noop
            | Put     Int    RegPtr
            | BinOp   BinOpT RegPtr RegPtr RegPtr
@@ -27,10 +29,10 @@ data Instr = Lab     RegPtr RegPtr
            | Store   RegPtr RegPtr
            | Alloc   RegPtr RegPtr RegPtr
            | PSetOff RegPtr RegPtr RegPtr
-           | Output  RegPtr
            | Halt    
            | PGetOff RegPtr RegPtr
            | MSize   RegPtr RegPtr 
+           | Mov     RegPtr RegPtr
              deriving (Show, Eq, Read)
 
 data InstrKind = LAB
@@ -40,7 +42,7 @@ data InstrKind = LAB
                | BRET           
                | FLOWSTO
                | LJOIN
-               | PUTBOT
+               | PUTLAB
                | NOOP           
                | PUT
                | BINOP
@@ -50,10 +52,10 @@ data InstrKind = LAB
                | STORE
                | ALLOC
                | PSETOFF
-               | OUTPUT
                | HALT
                | PGETOFF
                | MSIZE
+               | MOV
              deriving (Show, Eq, Read, Ord)
 
 allInstrKind :: [InstrKind]
@@ -64,7 +66,7 @@ allInstrKind = [ LAB
                , BRET           
                , FLOWSTO
                , LJOIN
-               , PUTBOT
+               , PUTLAB
                , NOOP           
                , PUT
                , BINOP
@@ -74,10 +76,10 @@ allInstrKind = [ LAB
                , STORE
                , ALLOC
                , PSETOFF
-               , OUTPUT
                , HALT
                , PGETOFF
-               , MSIZE ]
+               , MSIZE 
+               , MOV ]
 
 opcodeOfInstr :: Instr -> Maybe InstrKind
 opcodeOfInstr (Lab _ _      ) = Just LAB
@@ -87,7 +89,7 @@ opcodeOfInstr (BCall _ _ _  ) = Just BCALL
 opcodeOfInstr (BRet         ) = Just BRET
 opcodeOfInstr (FlowsTo _ _ _) = Just FLOWSTO
 opcodeOfInstr (LJoin _ _ _  ) = Just LJOIN
-opcodeOfInstr (PutBot _     ) = Just PUTBOT
+opcodeOfInstr (PutLab _ _   ) = Just PUTLAB
 opcodeOfInstr (Noop         ) = Just NOOP
 opcodeOfInstr (Put _ _      ) = Just PUT
 opcodeOfInstr (BinOp _ _ _ _) = Just BINOP
@@ -97,7 +99,7 @@ opcodeOfInstr (Load _ _     ) = Just LOAD
 opcodeOfInstr (Store _ _    ) = Just STORE
 opcodeOfInstr (Alloc _ _ _  ) = Just ALLOC
 opcodeOfInstr (PSetOff _ _ _) = Just PSETOFF
-opcodeOfInstr (Output _     ) = Just OUTPUT
 opcodeOfInstr (PGetOff _ _  ) = Just PGETOFF
 opcodeOfInstr (MSize _ _    ) = Just MSIZE
+opcodeOfInstr (Mov _ _      ) = Just MOV
 opcodeOfInstr (_            ) = Nothing 

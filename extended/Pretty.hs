@@ -52,7 +52,7 @@ instance PP Instr where
     pp (BRet)             = text "BRet"
     pp (FlowsTo r1 r2 r3) = text "FlowsTo" <+> pp r1 <+> pp r2 <+> pp r3
     pp (LJoin r1 r2 r3)   = text "LJoin"   <+> pp r1 <+> pp r2 <+> pp r3
-    pp (PutBot r1)        = text "PutBot"  <+> pp r1
+    pp (PutLab l r1)      = text "PutBot"  <+> pp l  <+> pp r1
     pp (Noop)             = text "Noop"
     pp (Put n r1)         = text "Put"     <+> pp n  <+> pp r1
     pp (BinOp o r1 r2 r3) = text "BinOp"   <+> pp o  <+> pp r1 <+> pp r2 <+> pp r3
@@ -62,10 +62,10 @@ instance PP Instr where
     pp (Store r1 r2)      = text "Store"   <+> pp r1 <+> pp r2
     pp (Alloc r1 r2 r3)   = text "Alloc"   <+> pp r1 <+> pp r2 <+> pp r3
     pp (PSetOff r1 r2 r3) = text "PSetOff" <+> pp r1 <+> pp r2 <+> pp r3
-    pp (Output r1)        = text "Output"  <+> pp r1
     pp (Halt)             = text "Halt"
     pp (PGetOff r1 r2)    = text "PGetOff" <+> pp r1 <+> pp r2
     pp (MSize r1 r2)      = text "MSize"   <+> pp r1 <+> pp r2
+    pp (Mov r1 r2)        = text "Mov  "   <+> pp r1 <+> pp r2
 
 instance PP Pointer where
     pp (Ptr b n) = PP.parens $ pp b <+> PP.colon <+> pp n
