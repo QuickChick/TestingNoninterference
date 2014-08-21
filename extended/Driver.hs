@@ -211,13 +211,15 @@ printMTTF (Just x) = printf "%0.2f" (fromRational x :: Double)
 
 statsForTable :: Flags -> IO ()
 statsForTable flags = do
-    putStrLn "\\begin{tabular}{ c c c c }"
-    putStrLn "INSTR & SSNI & LLNI & MSNI \\\\ "
+    putStrLn "\\begin{tabular}{ c c c c c }"
+    putStrLn "INSTR & SSNI (naive) & SSNI & LLNI & MSNI \\\\ "
     mapM_ (statsForTableAux flags) $ mutateTable defaultTable
     putStrLn "\\end{tabular}"
 
 statsForTableAux :: Flags -> RuleTable -> IO ()
 statsForTableAux f table = do
+    naiveSsniCounters <- checkTimeoutProperty (naiveSsniConfig f) table
+    let naiveSsniStats = computeMTTF naiveSsniCounters
     ssniCounters <- checkTimeoutProperty (ssniConfig f) table
     let ssniStats = computeMTTF ssniCounters
     llniCounters <- checkTimeoutProperty (llniConfig f) table
@@ -226,6 +228,7 @@ statsForTableAux f table = do
     let msniStats = computeMTTF msniCounters
     -- TODO: Figure out a way to add numbering in the mutatant table thingy
     putStrLn $ showMutantTable table ++ " & "  
+             ++ printMTTF naiveSsniStats ++ " & " 
              ++ printMTTF ssniStats ++ " & " 
              ++ printMTTF llniStats ++ " & " 
              ++ printMTTF msniStats ++ " \\\\ "

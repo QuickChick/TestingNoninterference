@@ -5,6 +5,7 @@ import System.Console.CmdArgs
 
 data GenType = GenByExec
              | GenTinySSNI
+             | GenNaiveSSNI
                deriving (Eq, Show, Read, Typeable, Data)
 
 data TestProperty = TestLLNI
@@ -48,6 +49,8 @@ defaultFlags = Flags { mode = ModeQuickCheck
                      , doShrink = False 
                      , collectF = CollectNothing }
 
+naiveSsniConfig :: Flags -> Flags 
+naiveSsniConfig f = f { strategy = GenNaiveSSNI , testProp = TestSSNI }
 ssniConfig :: Flags -> Flags 
 ssniConfig f = f { strategy = GenTinySSNI , testProp = TestSSNI }
 llniConfig :: Flags -> Flags

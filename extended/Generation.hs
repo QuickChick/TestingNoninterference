@@ -76,8 +76,10 @@ instance SmartGen Atom where
 instance SmartGen PtrAtom where
     smartGen info@(MkInfo Flags{..} cl _ _) = do
         case strategy of 
-          GenByExec -> liftM (PAtm 0) (smartGen info)
-          GenTinySSNI -> liftM2 PAtm (choose (0, cl - 1)) (smartGen info)
+          GenByExec    -> liftM (PAtm 0) (smartGen info)
+          GenTinySSNI  -> liftM2 PAtm (choose (0, cl - 1)) (smartGen info)
+          GenNaiveSSNI -> liftM2 PAtm (choose (0, cl - 1)) (smartGen info)
+
 
 instance SmartGen RegSet where
     smartGen info = fmap RegSet $ vectorOf (noRegs info) (smartGen info)
@@ -132,12 +134,12 @@ containsRet :: Stack -> Bool
 containsRet (Stack s) = not $ null s
 
 -- Generates a structurally valid instruction
--- LL: TODO: Fix weights. AND DO SOMETHING ABOUT BRETS!
-ainstrSSNI :: State -> Gen Instr 
-ainstrSSNI st@State{..} = 
+ainstrSSNI :: Flags -> State -> Gen Instr 
+ainstrSSNI f st@State{..} = 
     let (dptr, cptr, num, lab) = groupRegisters (length imem) 
                                  (unRegSet regs) [] [] [] [] 0
         genRegPtr = choose (0, length (unRegSet regs) - 1)
+        ifNaive x y = if strategy f == GenNaiveSSNI then y else x
     in frequency $ 
            [(5, pure Noop)
 --           ,(0, pure Halt)
@@ -151,12 +153,12 @@ ainstrSSNI st@State{..} =
            [(10, liftM2 PutLab (genLabelBelow H) genRegPtr)] ++
            [(10, liftM3 BCall (elements cptr) (elements lab) genRegPtr)
             | not $ null lab || null cptr ] ++
-           [(20, pure BRet) | containsRet stack] ++
-           [(13, liftM3 Alloc (elements num) (elements lab) genRegPtr)
+           [(ifNaive 20 10, pure BRet) | containsRet stack] ++
+           [(ifNaive 13 10, liftM3 Alloc (elements num) (elements lab) genRegPtr)
             | not $ null num || null lab] ++
-           [(13, liftM2 Load (elements dptr) genRegPtr) 
+           [(ifNaive 13 10, liftM2 Load (elements dptr) genRegPtr) 
             | not $ null dptr] ++
-           [(30, liftM2 Store (elements dptr) genRegPtr)
+           [(ifNaive 30 10, liftM2 Store (elements dptr) genRegPtr)
             | not $ null dptr] ++
            [(10, liftM Jump (elements cptr)) | not $ null cptr] ++
            [(10, liftM2 Bnz (choose (-1, 2)) (elements num))
@@ -171,14 +173,12 @@ ainstrSSNI st@State{..} =
             | not $ null dptr] ++
            [(10, liftM2 Mov genRegPtr genRegPtr)]
 
-
-popInstrSSNI :: State -> Gen State 
-popInstrSSNI s@State{..} = do 
-  imem' <- ainstrSSNI s >>= return . replicate (length imem) 
+popInstrSSNI :: Flags -> State -> Gen State 
+popInstrSSNI f s@State{..} = do 
+  imem' <- ainstrSSNI f s >>= return . replicate (length imem) 
   return s{imem = imem'}
 
 -- Generates a structurally valid instruction
--- LL: TODO: Fix weights. AND DO SOMETHING ABOUT BRETS!
 ainstrLLNI :: State -> Gen Instr 
 ainstrLLNI st@State{..} = 
     let (dptr, cptr, num, lab) = groupRegisters (length imem) 
@@ -248,10 +248,11 @@ popInstrLLNI table s@State{..} = do
   genExecHelper table s s (3 * len) (fromList $ replicate len Nothing) 
 
 popInstr :: Flags -> State -> Gen State
-popInstr Flags{..} s =
+popInstr f@Flags{..} s =
     case strategy of 
-      GenTinySSNI -> popInstrSSNI s
-      GenByExec   -> popInstrLLNI defaultTable s
+      GenTinySSNI  -> popInstrSSNI f s
+      GenNaiveSSNI -> popInstrSSNI f s
+      GenByExec    -> popInstrLLNI defaultTable s
 
 ------------------------- VARIATIONS --------------------------
 
@@ -355,8 +356,9 @@ data Parameters = Parameters { minFrames :: Int
 getParameters :: Flags -> Parameters 
 getParameters Flags{..} =
     case strategy of
-      GenTinySSNI -> Parameters 2 2 2 2 2 2 10
-      GenByExec   -> Parameters 2 4 2 8 5 noSteps 10
+      GenTinySSNI  -> Parameters 2 2 2 2 2 2 10
+      GenNaiveSSNI -> Parameters 2 2 2 2 2 2 10
+      GenByExec    -> Parameters 2 4 2 8 5 noSteps 10
 
 -- Stamps start out bottom. Fill them up later!
 genInitMem :: Flags -> Gen (Memory, [(Block, Int)]) 
