@@ -20,20 +20,14 @@ import Flags
 propStampsWellFormed :: Property
 propStampsWellFormed = forAllShrink arbitrary shrink wellFormed
 
-propPreservesWellFormed :: RuleTable -> State -> Property
-propPreservesWellFormed t st =
-    wellFormed st ==> 
-    case exec t st of 
-      Just st' -> property $ 
-{-          whenFail (putStrLn . PP.render $ 
-                       text "Not well formed:" $$ 
-                       text "Original State:" $$
-                       pp st $$
-                       text "Final State:" $$ 
-                       pp st'
-                   ) $ -} 
-                       wellFormed st'
-      Nothing -> property rejected
+propPreservesWellFormed :: Int -> RuleTable -> State -> Property
+propPreservesWellFormed 0 _ _ = property True
+propPreservesWellFormed noSteps t st =
+    if wellFormed st then 
+        case exec t st of 
+          Just st' -> propPreservesWellFormed (noSteps - 1) t st'
+          Nothing  -> property True
+    else property False
 
 propGenIndist :: Property
 propGenIndist = forAll (genVariationState (llniConfig defaultFlags)) aux 

@@ -61,13 +61,13 @@ mkProperty f@Flags{..} t =
     case testProp of
       TestSSNI -> 
           forAllShrink (genVariationState f) shrinkF $ \v@(Var _ st _) -> 
-              propSSNI f t v .&&. propPreservesWellFormed t st
+              propSSNI f t v .&&. propPreservesWellFormed noSteps t st
       TestLLNI -> 
           forAllShrink (genVariationState f) shrinkF $ \v@(Var _ st _) ->
-              propLLNI f t v .&&. propPreservesWellFormed t st
+              propLLNI f t v .&&. propPreservesWellFormed noSteps t st
       TestMSNI -> 
           forAllShrink (genVariationState f) shrinkF $ \v@(Var _ st _) ->
-              propMSNI f t v .&&. propPreservesWellFormed t st
+              propMSNI f t v .&&. propPreservesWellFormed noSteps t st
 
 quickCheckN :: Int -> Property -> IO ()
 quickCheckN n = quickCheckWith stdArgs{maxSuccess = n}
