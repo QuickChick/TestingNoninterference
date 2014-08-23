@@ -18,12 +18,12 @@ data MVec = MVec { mLab1 :: Label
 type Var = MVec -> Label
 
 data RuleExpr = EBot
-              | EVar  Var
+              | EVar  (String, Var)
               | EJoin RuleExpr RuleExpr
 
 instance Show RuleExpr where
     show EBot = "EBot"
-    show (EVar _) = "EVar"
+    show (EVar (s,_)) = "EVar " ++ s
     show (EJoin e1 e2) = "JOIN " ++ show e1 ++ " " ++ show e2
 
 data SideCond = ATrue
@@ -41,7 +41,7 @@ type RVec = Maybe (Maybe Label, Label)
   
 evalExpr :: MVec -> RuleExpr -> Label
 evalExpr _ EBot = bot
-evalExpr m (EVar l) = l m
+evalExpr m (EVar (_,l)) = l m
 evalExpr m (EJoin r1 r2) = evalExpr m r1 `lub` evalExpr m r2
 
 evalCond :: MVec -> SideCond -> Bool
@@ -96,10 +96,10 @@ parseExpr ("BOT":r)  = (Just EBot, r)
 parseExpr ("JOIN":r) = let (Just e1, r') = parseExpr r
                            (Just e2, r'' ) = parseExpr r'
                        in (Just $ EJoin e1 e2, r'')
-parseExpr ("Lab1":r) = (Just $ EVar mLab1, r)
-parseExpr ("Lab2":r) = (Just $ EVar mLab2, r)
-parseExpr ("Lab3":r) = (Just $ EVar mLab3, r)
-parseExpr ("LabPC":r) = (Just $ EVar mLab4, r)
+parseExpr ("Lab1":r) = (Just $ EVar ("Lab1",mLab1), r)
+parseExpr ("Lab2":r) = (Just $ EVar ("Lab2",mLab2), r)
+parseExpr ("Lab3":r) = (Just $ EVar ("Lab3",mLab3), r)
+parseExpr ("LabPC":r) = (Just $ EVar ("LabPC",mLab4), r)
 parseExpr a = error $ "Unexpected" ++ show a
 
 defaultTable :: RuleTable

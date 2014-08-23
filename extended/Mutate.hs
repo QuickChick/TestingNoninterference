@@ -2,13 +2,14 @@
 module Mutate where
 
 import Control.Monad
+import Control.Arrow
 import Data.Maybe
 import Rules
 import qualified Data.Map as Map
 
 breakExpr :: RuleExpr -> [RuleExpr]
 breakExpr EBot = []
-breakExpr (EVar v) = [EVar v]
+breakExpr (EVar (s,v)) = [EVar (s,v)]
 breakExpr (EJoin e1 e2) = breakExpr e1 ++ breakExpr e2
 
 joinExprs :: [RuleExpr] -> RuleExpr
@@ -27,9 +28,30 @@ andSconds [] = ATrue
 andSconds [c] = c
 andSconds (h:t) = AAnd h (andSconds t)
 
+dropAux :: a -> (a, [a]) -> (a, [a])
+dropAux x xs = (fst xs, x : snd xs)
+
+dropEachButNotPC :: [RuleExpr] -> [(RuleExpr,[RuleExpr])]
+dropEachButNotPC [] = []
+dropEachButNotPC (v@(EVar ("LabPC",_)):xs) = map (dropAux v) $ dropEachButNotPC xs
+dropEachButNotPC (x:xs) = (x,xs) : (map (dropAux x) (dropEachButNotPC xs))
+
 dropEach :: [x] -> [[x]]
 dropEach [] = []
 dropEach (x:xs) = xs : (map (x:) (dropEach xs))
+
+mutatePC :: Maybe RuleExpr -> RuleExpr -> [(Maybe RuleExpr, RuleExpr)]
+mutatePC ores epc =  
+  case breakExpr epc of 
+    [] -> []
+    es -> 
+     case ores of 
+       Just eres -> 
+           let f xs = (Just (EJoin eres (fst xs)), joinExprs (snd xs)) in
+           map f (dropEachButNotPC es)
+       Nothing -> 
+           let f xs = (Nothing, joinExprs xs) in
+           map f (dropEach es)
 
 mutateExpr :: RuleExpr -> [RuleExpr]
 mutateExpr e = case breakExpr e of 
@@ -46,7 +68,8 @@ mutateRule Rule{..} =
     (map (\a -> Rule a rlab rlpc) (mutateScond allow)) ++
     (join . maybeToList $ 
           fmap (map (flip (Rule allow) rlpc . Just) . mutateExpr) rlab) ++
-    (map (Rule allow rlab) $ mutateExpr rlpc)
+    (map (\respc -> Rule allow (fst respc) (snd respc)) (mutatePC rlab rlpc))
+--Rule allow rlab) $ mutateExpr rlpc)
 
 {-
 helper :: InstrKind -> Rule -> InstrKind -> Rule -> Rule
