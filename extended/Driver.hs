@@ -234,7 +234,7 @@ printMD (Just x) = printf "%0.2f" x
 
 statsForTable :: Flags -> IO ()
 statsForTable flags = do
-    putStrLn "\\begin{tabular}{ c c c c c }"
+    putStrLn "\\begin{tabular}{ c c c c c c c}"
     putStrLn "INSTR & SSNI (naive) & SSNI & LLNI (naive) & LLNI & MSNI (naive) & MSNI \\\\ "
     times <- liftM transpose $ statsForTableAux flags $ mutateTable defaultTable
     let ms = map means times
