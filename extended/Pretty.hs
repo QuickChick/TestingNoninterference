@@ -43,6 +43,8 @@ instance PP Block where
 instance PP BinOpT where
     pp BAdd  = PP.char '+'
     pp BMult = PP.char '*'
+    pp BFlowsTo = PP.text "Flows"
+    pp BJoin = PP.text "/\\"
 
 instance PP Instr where
     pp (Lab r1 r2)        = text "Lab"     <+> pp r1 <+> pp r2
@@ -50,8 +52,6 @@ instance PP Instr where
     pp (PcLab r1)         = text "PcLab"   <+> pp r1
     pp (BCall r1 r2 r3)   = text "BCall"   <+> pp r1 <+> pp r2 <+> pp r3
     pp (BRet)             = text "BRet"
-    pp (FlowsTo r1 r2 r3) = text "FlowsTo" <+> pp r1 <+> pp r2 <+> pp r3
-    pp (LJoin r1 r2 r3)   = text "LJoin"   <+> pp r1 <+> pp r2 <+> pp r3
     pp (PutLab l r1)      = text "PutBot"  <+> pp l  <+> pp r1
     pp (Noop)             = text "Noop"
     pp (Put n r1)         = text "Put"     <+> pp n  <+> pp r1

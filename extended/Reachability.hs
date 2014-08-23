@@ -5,6 +5,7 @@ import Machine
 import Memory
 import Labels
 import Primitives
+import Instructions
 
 import Data.List
 import Data.Maybe

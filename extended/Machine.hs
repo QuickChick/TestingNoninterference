@@ -47,24 +47,6 @@ exec' t s@(State {..}) instruction = do
           pc'    = PAtm (addrPc + 1) rlpc
       regs' <- writeR r2 (Atom result rlab) regs
       return s{regs = regs', pc = pc'}
-    FlowsTo r1 r2 r3 -> do
-      -- True, Join k1 k2, LabPC
-      Atom (VLab l1) k1 <- readR r1 regs
-      Atom (VLab l2) k2 <- readR r2 regs
-      (Just rlab, rlpc) <- runTMU t FLOWSTO [k1,k2] lpc
-      let result = VInt $ flows l1 l2 
-          pc'    = PAtm (addrPc + 1) rlpc
-      regs' <- writeR r3 (Atom result rlab) regs
-      return s{regs = regs', pc = pc'}
-    LJoin r1 r2 r3 -> do
-      -- True, Join k1 k2, LabPC                     
-      Atom (VLab l1) k1 <- readR r1 regs
-      Atom (VLab l2) k2 <- readR r2 regs
-      (Just rlab, rlpc) <- runTMU t LJOIN [k1,k2] lpc
-      let result = VLab $ l1 `lub` l2 
-          pc'    = PAtm (addrPc + 1) rlpc
-      regs' <- writeR r3 (Atom result rlab) regs
-      return s{regs = regs', pc = pc'}
     PutLab l r1 -> do
       -- True, BOT, LabPC
       (Just rlab, rlpc) <- runTMU t PUTLAB [] lpc
@@ -154,11 +136,11 @@ exec' t s@(State {..}) instruction = do
       return s{regs = regs', pc = pc'}
     BinOp o r1 r2 r3 -> do
       -- True, Join l1 l2, LabPC
-      Atom (VInt n1) l1 <- readR r1 regs
-      Atom (VInt n2) l2 <- readR r2 regs 
+      Atom v1 l1 <- readR r1 regs
+      Atom v2 l2 <- readR r2 regs 
       (Just rlab, rlpc) <- runTMU t BINOP [l1,l2] lpc
-      let result = VInt $ evalBinop o n1 n2 
-          pc'    = PAtm (addrPc + 1) rlpc
+      result <- evalBinop o v1 v2 
+      let pc'    = PAtm (addrPc + 1) rlpc
       regs' <- writeR r3 (Atom result rlab) regs
       {- traceShow (r1, r2, "L1", l1, "L2", l2, "RLAB", rlab) $ -} 
       return s{regs = regs', pc = pc'}

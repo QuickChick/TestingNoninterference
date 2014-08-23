@@ -206,8 +206,6 @@ decrRegInstr r i =
       PcLab r1         -> PcLab   (cDecr r r1)
       BCall r1 r2 r3   -> BCall   (cDecr r r1) (cDecr r r2) (cDecr r r3)
       BRet             -> BRet
-      FlowsTo r1 r2 r3 -> FlowsTo (cDecr r r1) (cDecr r r2) (cDecr r r3)
-      LJoin r1 r2 r3   -> LJoin   (cDecr r r1) (cDecr r r2) (cDecr r r3)
       PutLab l r1      -> PutLab  l (cDecr r r1) 
       Noop             -> Noop
       Put n r1         -> Put n   (cDecr r r1)

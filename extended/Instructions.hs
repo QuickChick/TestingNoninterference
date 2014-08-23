@@ -2,14 +2,36 @@
 module Instructions where
 
 import Labels
+import Memory
 
 type RegPtr = Int
 
-data BinOpT = BAdd | BMult deriving (Eq, Show, Read)
+data Pointer = Ptr Block Int
+             deriving (Eq, Show, Read)
 
-evalBinop :: BinOpT -> Int -> Int -> Int
-evalBinop BAdd  = (+)
-evalBinop BMult = (*)
+data Value = VInt Int 
+           | VPtr Pointer
+           | VLab Label
+             deriving (Eq, Show, Read)
+
+data Atom = Atom Value Label
+            deriving (Eq, Show, Read)
+
+data PtrAtom = PAtm Int Label
+               deriving (Eq, Show, Read)
+             
+data BinOpT = BAdd 
+            | BMult 
+            | BFlowsTo 
+            | BJoin 
+              deriving (Eq, Show, Read)
+
+evalBinop :: BinOpT -> Value -> Value -> Maybe Value
+evalBinop BAdd  (VInt x) (VInt y) = Just . VInt $ x + y
+evalBinop BMult (VInt x) (VInt y) = Just . VInt $ x * y
+evalBinop BJoin    (VLab l1) (VLab l2) = Just . VLab $ lub l1 l2
+evalBinop BFlowsTo (VLab l1) (VLab l2) = Just . VInt $ flows l1 l2 
+evalBinop _ _ _ = Nothing
 
 -- Conversion to register machine. 
 data Instr = Lab     RegPtr RegPtr
@@ -17,8 +39,6 @@ data Instr = Lab     RegPtr RegPtr
            | PcLab   RegPtr
            | BCall   RegPtr RegPtr RegPtr
            | BRet   
-           | FlowsTo RegPtr RegPtr RegPtr
-           | LJoin   RegPtr RegPtr RegPtr
            | PutLab  Label  RegPtr
            | Noop
            | Put     Int    RegPtr
@@ -40,8 +60,6 @@ data InstrKind = LAB
                | PCLAB
                | BCALL
                | BRET           
-               | FLOWSTO
-               | LJOIN
                | PUTLAB
                | NOOP           
                | PUT
@@ -64,8 +82,6 @@ allInstrKind = [ LAB
                , PCLAB
                , BCALL
                , BRET           
-               , FLOWSTO
-               , LJOIN
                , PUTLAB
                , NOOP           
                , PUT
@@ -87,8 +103,6 @@ opcodeOfInstr (MLab _ _     ) = Just MLAB
 opcodeOfInstr (PcLab _      ) = Just PCLAB
 opcodeOfInstr (BCall _ _ _  ) = Just BCALL
 opcodeOfInstr (BRet         ) = Just BRET
-opcodeOfInstr (FlowsTo _ _ _) = Just FLOWSTO
-opcodeOfInstr (LJoin _ _ _  ) = Just LJOIN
 opcodeOfInstr (PutLab _ _   ) = Just PUTLAB
 opcodeOfInstr (Noop         ) = Just NOOP
 opcodeOfInstr (Put _ _      ) = Just PUT

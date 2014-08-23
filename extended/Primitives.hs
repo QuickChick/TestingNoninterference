@@ -5,20 +5,6 @@ import Memory
 import Labels
 import Instructions
 
-data Pointer = Ptr Block Int
-             deriving (Eq, Show, Read)
-
-data Value = VInt Int 
-           | VPtr Pointer
-           | VLab Label
-             deriving (Eq, Show, Read)
-
-data Atom = Atom Value Label
-            deriving (Eq, Show, Read)
-
-data PtrAtom = PAtm Int Label
-               deriving (Eq, Show, Read)
-             
 type IMem = [Instr]
 
 index :: Int -> [a] -> Maybe a

@@ -31,8 +31,8 @@ class SmartGen a where
 
 instance Arbitrary BinOpT where
     arbitrary = elements [BAdd, BMult]
-    shrink BAdd  = []
     shrink BMult = [BAdd]
+    shrink _     = []
 
 -- Generate a label below another
 genLabelBelow :: Label -> Gen Label
@@ -146,10 +146,6 @@ ainstrSSNI f st@State{..} =
            ,(10, liftM PcLab genRegPtr)
            ,(10, liftM2 Lab genRegPtr genRegPtr)] ++
            [(10, liftM2 MLab (elements dptr) genRegPtr) | not $ null dptr] ++
-           [(10, liftM3 FlowsTo (elements lab) (elements lab) genRegPtr)
-            | not $ null lab] ++
-           [(10, liftM3 LJoin (elements lab) (elements lab) genRegPtr)
-            | not $ null lab] ++
            [(10, liftM2 PutLab (genLabelBelow H) genRegPtr)] ++
            [(10, liftM3 BCall (elements cptr) (elements lab) genRegPtr)
             | not $ null lab || null cptr ] ++
@@ -190,10 +186,6 @@ ainstrLLNI st@State{..} =
            ,(10, liftM PcLab genRegPtr)
            ,(10, liftM2 Lab genRegPtr genRegPtr)] ++
            [(10, liftM2 MLab (elements dptr) genRegPtr) | not $ null dptr] ++
-           [(10, liftM3 FlowsTo (elements lab) (elements lab) genRegPtr)
-            | not $ null lab] ++
-           [(10, liftM3 LJoin (elements lab) (elements lab) genRegPtr)
-            | not $ null lab] ++
            [(10, liftM2 PutLab (genLabelBelow H) genRegPtr)] ++
            [(10, liftM3 BCall (elements cptr) (elements lab) genRegPtr)
             | not $ null lab || null cptr ] ++
