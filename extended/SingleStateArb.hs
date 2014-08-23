@@ -15,6 +15,5 @@ stateOfVar :: Variation State -> State
 stateOfVar (Var _ s _) = s
 
 instance Arbitrary State where
-    arbitrary = liftM stateOfVar . genVariationState $ 
-                defaultFlags { strategy = GenByExec }
+    arbitrary = liftM stateOfVar . genVariationState $ llniConfig defaultFlags 
     shrink x = filter (/= x) $ map stateOfVar $  shrinkV (Var H x x)

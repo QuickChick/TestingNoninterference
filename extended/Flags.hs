@@ -3,9 +3,11 @@ module Flags where
 
 import System.Console.CmdArgs
 
-data GenType = GenByExec
-             | GenTinySSNI
-             | GenNaiveSSNI
+data GenInstrType = Naive | DiscardUniform
+            deriving (Eq, Show, Read, Typeable, Data)
+
+data GenType = GenByExec 
+             | GenSSNI   
                deriving (Eq, Show, Read, Typeable, Data)
 
 data TestProperty = TestLLNI
@@ -23,6 +25,7 @@ data CollectF = CollectInstrCode
 
 data Flags = Flags { mode :: QCMode
                    , strategy :: GenType 
+                   , genInstrDist :: GenInstrType
                    , testProp :: TestProperty
                    , noSteps  :: Int
                    , maxTests :: Int
@@ -37,9 +40,10 @@ data Flags = Flags { mode :: QCMode
 
 defaultFlags :: Flags
 defaultFlags = Flags { mode = ModeQuickCheck
-                     , strategy = GenTinySSNI
-                     , testProp = TestSSNI
-                     , noSteps  = 2
+                     , strategy = GenByExec
+                     , genInstrDist = DiscardUniform
+                     , testProp = TestMSNI
+                     , noSteps  = 42
                      , maxTests = 10000
                      , mutantNo = Nothing
                      , discardRatio = 5
@@ -50,12 +54,20 @@ defaultFlags = Flags { mode = ModeQuickCheck
                      , collectF = CollectNothing }
 
 naiveSsniConfig :: Flags -> Flags 
-naiveSsniConfig f = f { strategy = GenNaiveSSNI , testProp = TestSSNI }
+naiveSsniConfig f = f { strategy = GenSSNI 
+                      , genInstrDist = Naive
+                      , testProp = TestSSNI , noSteps = 2 }
 ssniConfig :: Flags -> Flags 
-ssniConfig f = f { strategy = GenTinySSNI , testProp = TestSSNI }
+ssniConfig f = (naiveSsniConfig f){ genInstrDist = DiscardUniform }
 llniConfig :: Flags -> Flags
-llniConfig f = f { strategy = GenByExec , testProp = TestLLNI , noSteps = 42 }
+llniConfig f = f { strategy = GenByExec
+                 , genInstrDist =  DiscardUniform 
+                 , testProp = TestLLNI , noSteps = 42 }
+naiveLlniConfig :: Flags -> Flags
+naiveLlniConfig f = (llniConfig f) {genInstrDist = Naive}
 msniConfig :: Flags -> Flags
-msniConfig f = f { strategy = GenByExec , testProp = TestMSNI , noSteps = 42 }
+msniConfig f = (llniConfig f) { genInstrDist = DiscardUniform, testProp = TestMSNI }
+naiveMsniConfig :: Flags -> Flags 
+naiveMsniConfig f = (msniConfig f) { genInstrDist = Naive }
 
 

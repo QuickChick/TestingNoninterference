@@ -27,6 +27,7 @@ import Data.IORef
 import System.Console.CmdArgs
 
 import Data.List
+import Data.Maybe
 
 import Control.Monad
 
@@ -199,39 +200,78 @@ checkTimeoutProperty flags table = do
                 Right (NoExpectedFailure {}) -> 
                     putStrLn "NoExpectedFailure!?" >> error "Bailing out"
 
+means :: [Maybe Rational] -> (Maybe Double, Maybe Double, Maybe Double)
+means [] = (Just 0,Just 0,Nothing)
+means xs =
+    let double                        = fromRational :: Rational -> Double
+        fins                          = catMaybes xs
+        n                             = genericLength fins
+        isInfinity                    = elem Nothing xs
+        arithmetic | isInfinity       = Nothing
+                   | n == 0           = Nothing
+                   | otherwise        = Just $ double $ sum fins / n
+        geometric  | isInfinity       = Nothing
+                   | n == 0           = Nothing
+                   | otherwise        = Just $ double (product fins) ** double (recip n)
+        harmonic   | 0 `elem` fins    = Just 0 -- See Note [Harmonic Mean]
+                   | n == 0           = Nothing
+                   | otherwise        = Just $ double $ n / sum (map recip fins)
+    in (arithmetic, harmonic, geometric)
+
 computeMTTF :: TestCounters -> Maybe Rational
 computeMTTF cs = 
   if null $ times_c cs then Nothing
   else Just $ sum (map fromIntegral $ times_c cs) 
            / (fromIntegral (bugs_c cs) * 1000)
 
-printMTTF :: Maybe Rational -> String
-printMTTF Nothing = "----"
-printMTTF (Just x) = printf "%0.2f" (fromRational x :: Double)
+printMR :: Maybe Rational -> String
+printMR Nothing = "----"
+printMR (Just x) = printf "%0.2f" (fromRational x :: Double)
+
+printMD :: Maybe Double -> String
+printMD Nothing = "----"
+printMD (Just x) = printf "%0.2f" x 
 
 statsForTable :: Flags -> IO ()
 statsForTable flags = do
     putStrLn "\\begin{tabular}{ c c c c c }"
-    putStrLn "INSTR & SSNI (naive) & SSNI & LLNI & MSNI \\\\ "
-    mapM_ (statsForTableAux flags) $ mutateTable defaultTable
+    putStrLn "INSTR & SSNI (naive) & SSNI & LLNI (naive) & LLNI & MSNI (naive) & MSNI \\\\ "
+    times <- liftM transpose $ statsForTableAux flags $ mutateTable defaultTable
+    let ms = map means times
+    putStr " AM & " 
+    putStr $ concat $ intersperse " & " $ map (\(x,_,_) -> printMD x) ms
+    putStrLn " \\\\"
+    putStr " GM & " 
+    putStr $ concat $ intersperse " & " $ map (\(_,x,_) -> printMD x) ms
+    putStrLn " \\\\"
     putStrLn "\\end{tabular}"
+    
 
-statsForTableAux :: Flags -> RuleTable -> IO ()
-statsForTableAux f table = do
+statsForTableAux :: Flags -> [RuleTable] -> IO [[Maybe Rational]]
+statsForTableAux f [] = return []
+statsForTableAux f (table:ts) = do
     naiveSsniCounters <- checkTimeoutProperty (naiveSsniConfig f) table
     let naiveSsniStats = computeMTTF naiveSsniCounters
     ssniCounters <- checkTimeoutProperty (ssniConfig f) table
     let ssniStats = computeMTTF ssniCounters
+    naiveLlniCounters <- checkTimeoutProperty (naiveLlniConfig f) table
+    let naiveLlniStats = computeMTTF naiveLlniCounters
     llniCounters <- checkTimeoutProperty (llniConfig f) table
     let llniStats = computeMTTF llniCounters
     msniCounters <- checkTimeoutProperty (msniConfig f) table
     let msniStats = computeMTTF msniCounters
-    -- TODO: Figure out a way to add numbering in the mutatant table thingy
+    naiveMsniCounters <- checkTimeoutProperty (naiveMsniConfig f) table
+    let naiveMsniStats = computeMTTF naiveMsniCounters
+  -- TODO: Figure out a way to add numbering in the mutatant table thingy
     putStrLn $ showMutantTable table ++ " & "  
-             ++ printMTTF naiveSsniStats ++ " & " 
-             ++ printMTTF ssniStats ++ " & " 
-             ++ printMTTF llniStats ++ " & " 
-             ++ printMTTF msniStats ++ " \\\\ "
+             ++ printMR naiveSsniStats ++ " & " 
+             ++ printMR ssniStats ++ " & " 
+             ++ printMR naiveLlniStats ++ " & " 
+             ++ printMR llniStats ++ " & " 
+             ++ printMR naiveMsniStats ++ " & "
+             ++ printMR msniStats ++ " \\\\ "
+    liftM ([naiveSsniStats, ssniStats, naiveLlniStats, llniStats, msniStats, naiveMsniStats]:)
+           (statsForTableAux f ts)
 
 testSingle :: Flags -> IO ()
 testSingle f@Flags{..} =

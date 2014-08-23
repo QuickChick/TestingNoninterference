@@ -76,10 +76,8 @@ instance SmartGen Atom where
 instance SmartGen PtrAtom where
     smartGen info@(MkInfo Flags{..} cl _ _) = do
         case strategy of 
-          GenByExec    -> liftM (PAtm 0) (smartGen info)
-          GenTinySSNI  -> liftM2 PAtm (choose (0, cl - 1)) (smartGen info)
-          GenNaiveSSNI -> liftM2 PAtm (choose (0, cl - 1)) (smartGen info)
-
+          GenByExec -> liftM (PAtm 0) (smartGen info)
+          GenSSNI   -> liftM2 PAtm (choose (0, cl - 1)) (smartGen info)
 
 instance SmartGen RegSet where
     smartGen info = fmap RegSet $ vectorOf (noRegs info) (smartGen info)
@@ -139,7 +137,7 @@ ainstrSSNI f st@State{..} =
     let (dptr, cptr, num, lab) = groupRegisters (length imem) 
                                  (unRegSet regs) [] [] [] [] 0
         genRegPtr = choose (0, length (unRegSet regs) - 1)
-        ifNaive x y = if strategy f == GenNaiveSSNI then y else x
+        ifNaive x y = if genInstrDist f == Naive then y else x
     in frequency $ 
            [(5, pure Noop)
 --           ,(0, pure Halt)
@@ -174,6 +172,7 @@ popInstrSSNI f s@State{..} = do
   imem' <- ainstrSSNI f s >>= return . replicate (length imem) 
   return s{imem = imem'}
 
+{-
 -- Generates a structurally valid instruction
 ainstrLLNI :: State -> Gen Instr 
 ainstrLLNI st@State{..} = 
@@ -208,18 +207,19 @@ ainstrLLNI st@State{..} =
            [(10, liftM2 PGetOff (elements dptr) genRegPtr) 
             | not $ null dptr] ++
            [(10, liftM2 Mov genRegPtr genRegPtr)]
+-}
 
 copyInstructions :: Zipper (Maybe Instr) -> State -> State 
 copyInstructions z s = s{imem = map (fromMaybe Noop) (toList z)}
 
-genExecHelper :: RuleTable -> State -> State -> Int -> Zipper (Maybe Instr) 
+genExecHelper :: Flags -> RuleTable -> State -> State -> Int -> Zipper (Maybe Instr) 
               -> Gen State
-genExecHelper _ s0 s 0 z = return $ copyInstructions z s0
-genExecHelper table s0 s tries zipper = {- trace "GenExec" $ -} do
+genExecHelper f _ s0 s 0 z = return $ copyInstructions z s0
+genExecHelper f table s0 s tries zipper = {- trace "GenExec" $ -} do
   (zipper',i) <- case current zipper of 
                    Nothing -> {- traceShow "Generatin" $-} do
                      -- No instruction. Generate
-                     i <- ainstrLLNI s 
+                     i <- ainstrSSNI f s 
                      return (zipper{current=Just i}, i)
                    Just i -> return (zipper,i)
   case exec' table s i of
@@ -228,23 +228,22 @@ genExecHelper table s0 s tries zipper = {- trace "GenExec" $ -} do
         let (PAtm addr _) = (pc s') in
         case moveZipper zipper' addr of
           Just zipper'' -> 
-              genExecHelper table s0 s' (tries-1) zipper''
+              genExecHelper f table s0 s' (tries-1) zipper''
           Nothing -> 
               -- PC out of bounds. End generation
               return $ copyInstructions zipper' s0
     Nothing -> return $ copyInstructions zipper' s0
 
-popInstrLLNI :: RuleTable -> State -> Gen State
-popInstrLLNI table s@State{..} = do
+popInstrLLNI :: Flags -> RuleTable -> State -> Gen State
+popInstrLLNI f table s@State{..} = do
   let len = length imem
-  genExecHelper table s s (3 * len) (fromList $ replicate len Nothing) 
+  genExecHelper f table s s (3 * len) (fromList $ replicate len Nothing) 
 
 popInstr :: Flags -> State -> Gen State
 popInstr f@Flags{..} s =
     case strategy of 
-      GenTinySSNI  -> popInstrSSNI f s
-      GenNaiveSSNI -> popInstrSSNI f s
-      GenByExec    -> popInstrLLNI defaultTable s
+      GenSSNI   -> popInstrSSNI f s
+      GenByExec -> popInstrLLNI f defaultTable s
 
 ------------------------- VARIATIONS --------------------------
 
@@ -348,9 +347,8 @@ data Parameters = Parameters { minFrames :: Int
 getParameters :: Flags -> Parameters 
 getParameters Flags{..} =
     case strategy of
-      GenTinySSNI  -> Parameters 2 2 2 2 2 2 10
-      GenNaiveSSNI -> Parameters 2 2 2 2 2 2 10
-      GenByExec    -> Parameters 2 4 2 8 5 noSteps 10
+      GenSSNI   -> Parameters 2 2 2 2 2 noSteps 10
+      GenByExec -> Parameters 2 4 2 8 5 noSteps 10
 
 -- Stamps start out bottom. Fill them up later!
 genInitMem :: Flags -> Gen (Memory, [(Block, Int)]) 
