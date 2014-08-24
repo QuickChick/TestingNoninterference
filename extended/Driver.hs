@@ -14,6 +14,7 @@ import Generation
 import SSNI
 import LLNI
 import MSNI
+import EENI
 import Rules
 import Mutate
 import Flags
@@ -69,6 +70,10 @@ mkProperty f@Flags{..} t =
       TestMSNI -> 
           forAllShrink (genVariationState f) shrinkF $ \v@(Var _ st _) ->
               propMSNI f t v .&&. propPreservesWellFormed noSteps t st
+      TestEENI -> 
+          forAllShrink (genVariationState f) shrinkF $ \v@(Var _ st _) ->
+              propEENI f t v .&&. propPreservesWellFormed noSteps t st
+
 
 quickCheckN :: Int -> Property -> IO ()
 quickCheckN n = quickCheckWith stdArgs{maxSuccess = n}
@@ -234,8 +239,8 @@ printMD (Just x) = printf "%0.2f" x
 
 statsForTable :: Flags -> IO ()
 statsForTable flags = do
-    putStrLn "\\begin{tabular}{ c c c c c c c}"
-    putStrLn "INSTR & SSNI (naive) & SSNI & LLNI (naive) & LLNI & MSNI (naive) & MSNI \\\\ "
+    putStrLn "\\begin{tabular}{ c c c c c c c c c}"
+    putStrLn "INSTR & SSNI (naive) & SSNI & EENI & LLNI (unopt) & LLNI (naive) & LLNI & MSNI (naive) & MSNI \\\\ "
     times <- liftM transpose $ statsForTableAux flags $ mutateTable defaultTable
     let ms = map means times
     putStr " AM & " 
@@ -250,10 +255,26 @@ statsForTable flags = do
 statsForTableAux :: Flags -> [RuleTable] -> IO [[Maybe Rational]]
 statsForTableAux f [] = return []
 statsForTableAux f (table:ts) = do
+  let all = [ naiveSsniConfig 
+            , ssniConfig 
+            , eeniConfig
+            , naiveLLNIListConfig 
+            , naiveLlniConfig
+            , llniConfig
+            , naiveMsniConfig 
+            , msniConfig ] 
+  all' <- mapM (\g -> liftM computeMTTF $ checkTimeoutProperty (g f) table) all
+  putStr $ showMutantTable table 
+  forM_ all' $ \stats -> putStr $ " & " ++ printMR stats
+  putStrLn "\\\\"
+  liftM (all':) $ statsForTableAux f ts
+  {-
     naiveSsniCounters <- checkTimeoutProperty (naiveSsniConfig f) table
     let naiveSsniStats = computeMTTF naiveSsniCounters
     ssniCounters <- checkTimeoutProperty (ssniConfig f) table
     let ssniStats = computeMTTF ssniCounters
+    naiveLLNIListCounters <- checkTimeoutProperty (naiveLLNIListConfig f) table
+    let naiveLLNIListStats = computeMTTF naiveLLNIListCounters
     naiveLlniCounters <- checkTimeoutProperty (naiveLlniConfig f) table
     let naiveLlniStats = computeMTTF naiveLlniCounters
     llniCounters <- checkTimeoutProperty (llniConfig f) table
@@ -266,12 +287,14 @@ statsForTableAux f (table:ts) = do
     putStrLn $ showMutantTable table ++ " & "  
              ++ printMR naiveSsniStats ++ " & " 
              ++ printMR ssniStats ++ " & " 
+             ++ printMR naiveLLNIListStats ++ " & "
              ++ printMR naiveLlniStats ++ " & " 
              ++ printMR llniStats ++ " & " 
              ++ printMR naiveMsniStats ++ " & "
              ++ printMR msniStats ++ " \\\\ "
     liftM ([naiveSsniStats, ssniStats, naiveLlniStats, llniStats, msniStats, naiveMsniStats]:)
            (statsForTableAux f ts)
+-}
 
 testSingle :: Flags -> IO ()
 testSingle f@Flags{..} =

@@ -3,6 +3,7 @@
 module Memory where
 
 import Labels
+import Data.List
 import Data.Map (Map)
 import qualified Data.Map as Map
 
@@ -44,6 +45,7 @@ data Mem a = Mem { contents :: Map Block (Frame a)
                  , sizes    :: Map Label Int}
             deriving (Eq, Show, Read)
 
+-- Maps as memories 
 instance (Eq a, Show a, Read a) => MemC (Mem a) a where
     next Mem{..} l = Map.findWithDefault 0 l sizes
     getFrame Mem{..} block = Map.lookup block contents
@@ -61,3 +63,5 @@ instance (Eq a, Show a, Read a) => MemC (Mem a) a where
     getBlocksBelow l m = concatMap (getBlocksAtLevel m) (labelsBelow l)
 
     mapMemory f m@Mem{..} = m{contents = Map.map f contents}
+
+

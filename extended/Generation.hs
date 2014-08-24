@@ -133,15 +133,16 @@ containsRet :: Stack -> Bool
 containsRet (Stack s) = not $ null s
 
 -- Generates a structurally valid instruction
-ainstrSSNI :: IMemC i => Flags -> (State i m) -> Gen Instr 
-ainstrSSNI f st@State{..} = 
+ainstr :: IMemC i => Flags -> Int -> (State i m) -> Gen Instr 
+ainstr f hltWeight st@State{..} = 
     let (dptr, cptr, num, lab) = groupRegisters (imLength imem) 
                                  (unRegSet regs) [] [] [] [] 0
         genRegPtr = choose (0, length (unRegSet regs) - 1)
         ifNaive x y = if genInstrDist f == Naive then y else x
+        hltW = if testProp f == TestEENI then hltWeight else 0
     in frequency $ 
            [(5, pure Noop)
---           ,(0, pure Halt)
+           ,(hltW, pure Halt)
            ,(10, liftM PcLab genRegPtr)
            ,(10, liftM2 Lab genRegPtr genRegPtr)] ++
            [(10, liftM2 MLab (elements dptr) genRegPtr) | not $ null dptr] ++
@@ -170,21 +171,21 @@ ainstrSSNI f st@State{..} =
 
 popInstrSSNI :: IMemC i => Flags -> (State i m) -> Gen (State i m) 
 popInstrSSNI f s@State{..} = do 
-  imem' <- ainstrSSNI f s >>= return . fromInstrList . replicate (imLength imem) 
+  imem' <- ainstr f 0 s >>= return . fromInstrList . replicate (imLength imem) 
   return s{imem = imem'}
 
-copyInstructions :: IMemC i => Zipper (Maybe Instr) -> (State i m) -> (State i m) 
-copyInstructions z s = s{imem = fromInstrList $ map (fromMaybe Noop) (toList z)}
+copyInstructions :: IMemC i => [Maybe Instr] -> (State i m) -> (State i m) 
+copyInstructions z s = s{imem = fromInstrList $ map (fromMaybe Noop) z}
 
 genExecHelper :: (IMemC i, MemC m Atom) =>Flags -> RuleTable -> State i m -> 
-                 State i m -> Int -> Zipper (Maybe Instr) 
+                 State i m -> Int -> Int -> Zipper (Maybe Instr) 
               -> Gen (State i m)
-genExecHelper f _ s0 s 0 z = return $ copyInstructions z s0
-genExecHelper f table s0 s tries zipper = {- trace "GenExec" $ -} do
+genExecHelper f _ s0 s 0 _ z = return $ copyInstructions (toList z) s0
+genExecHelper f table s0 s tries hltWeight zipper = do
   (zipper',i) <- case current zipper of 
-                   Nothing -> {- traceShow "Generatin" $-} do
+                   Nothing -> do
                      -- No instruction. Generate
-                     i <- ainstrSSNI f s 
+                     i <- ainstr f hltWeight s 
                      return (zipper{current=Just i}, i)
                    Just i -> return (zipper,i)
   case exec' table s i of
@@ -193,19 +194,45 @@ genExecHelper f table s0 s tries zipper = {- trace "GenExec" $ -} do
         let (PAtm addr _) = (pc s') in
         case moveZipper zipper' addr of
           Just zipper'' -> 
-              genExecHelper f table s0 s' (tries-1) zipper''
+              genExecHelper f table s0 s' (tries-1) (hltWeight+1) zipper''
           Nothing -> 
               -- PC out of bounds. End generation
-              return $ copyInstructions zipper' s0
-    Nothing -> return $ copyInstructions zipper' s0
+              return $ copyInstructions (toList zipper') s0
+    Nothing -> return $ copyInstructions (toList zipper') s0
 
-popInstrLLNI :: (IMemC i, MemC m Atom) => Flags -> RuleTable -> State i m -> 
+-- Naive-inefficient way of doing genByExec
+genExecHelperLst :: (IMemC i, MemC m Atom) =>Flags -> RuleTable -> State i m -> 
+                 State i m -> Int -> [Maybe Instr]
+              -> Gen (State i m)
+genExecHelperLst f _ s0 s 0 instrs = return $ copyInstructions instrs s0
+genExecHelperLst f table s0 s tries instrs = do
+  let (PAtm idx _) = pc s 
+  (instrs',i) <- case instrs !! idx of 
+                   Nothing -> do
+                     -- No instruction. Generate
+                     i <- ainstr f 0 s 
+                     return $ (fromJust $ update idx (Just i) instrs, i)
+                   Just i -> return (instrs,i)
+  case exec table (copyInstructions instrs' s) of
+    Just s' -> 
+        let (PAtm addr _) = (pc s') in
+        if addr < 0 || addr >= length instrs' then
+            -- PC out of bounds. End generation
+              return $ copyInstructions instrs' s0
+        else genExecHelperLst f table s0 s' (tries-1) instrs'
+    Nothing -> return $ copyInstructions instrs s0
+
+popInstrLLNI :: (IMemC i, MemC m Atom, Show i, Show m) => Flags -> RuleTable -> State i m -> 
                 Gen (State i m)
 popInstrLLNI f table s@State{..} = do
   let len = imLength imem
-  genExecHelper f table s s (3 * len) (fromList $ replicate len Nothing) 
+  case memType f of 
+    MemList -> 
+      genExecHelperLst f table s s (3 * len) (replicate len Nothing)
+    MemMap ->
+      genExecHelper f table s s (3 * len) 0 (fromList $ replicate len Nothing) 
 
-popInstr :: (IMemC i, MemC m Atom) => Flags -> (State i m) -> Gen (State i m)
+popInstr :: (Show i, Show m, IMemC i, MemC m Atom) => Flags -> (State i m) -> Gen (State i m)
 popInstr f@Flags{..} s =
     case strategy of 
       GenSSNI   -> popInstrSSNI f s
@@ -350,7 +377,7 @@ instantiateStamps = return
 --defaultFlags :: Flags 
 --defaultFlags = Flags.defaultFlags
 
-genVariationState :: (MemC m Atom, IMemC i, SmartVary m) => 
+genVariationState :: (MemC m Atom, IMemC i, SmartVary m, Show i, Show m) => 
                      Flags -> Gen (Variation (State i m))
 genVariationState flags = do 
   let Parameters{..} = getParameters flags

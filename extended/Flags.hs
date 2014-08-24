@@ -3,6 +3,9 @@ module Flags where
 
 import System.Console.CmdArgs
 
+data MemType = MemList | MemMap
+             deriving (Eq, Show, Read, Typeable, Data)
+
 data GenInstrType = Naive | DiscardUniform
             deriving (Eq, Show, Read, Typeable, Data)
 
@@ -13,6 +16,7 @@ data GenType = GenByExec
 data TestProperty = TestLLNI
                   | TestSSNI
                   | TestMSNI
+                  | TestEENI
             deriving (Eq, Show, Read, Typeable, Data)
 
 data QCMode = ModeQuickCheck
@@ -26,6 +30,7 @@ data CollectF = CollectInstrCode
 data Flags = Flags { mode :: QCMode
                    , strategy :: GenType 
                    , genInstrDist :: GenInstrType
+                   , memType :: MemType
                    , testProp :: TestProperty
                    , noSteps  :: Int
                    , maxTests :: Int
@@ -42,6 +47,7 @@ defaultFlags :: Flags
 defaultFlags = Flags { mode = ModeQuickCheck
                      , strategy = GenByExec
                      , genInstrDist = DiscardUniform
+                     , memType = MemMap
                      , testProp = TestMSNI
                      , noSteps  = 42
                      , maxTests = 10000
@@ -65,9 +71,14 @@ llniConfig f = f { strategy = GenByExec
                  , testProp = TestLLNI , noSteps = 42 }
 naiveLlniConfig :: Flags -> Flags
 naiveLlniConfig f = (llniConfig f) {genInstrDist = Naive}
+naiveLLNIListConfig :: Flags -> Flags
+naiveLLNIListConfig f = (naiveLlniConfig f) {memType = MemList}
 msniConfig :: Flags -> Flags
 msniConfig f = (llniConfig f) { genInstrDist = DiscardUniform, testProp = TestMSNI }
 naiveMsniConfig :: Flags -> Flags 
 naiveMsniConfig f = (msniConfig f) { genInstrDist = Naive }
+eeniConfig :: Flags -> Flags
+eeniConfig f = (llniConfig f) { genInstrDist = DiscardUniform, testProp = TestEENI }
+
 
 
