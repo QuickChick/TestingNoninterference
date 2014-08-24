@@ -148,8 +148,8 @@ instance ShrinkV (Frame Atom) where
 
 instance ShrinkV (Mem Atom) where
     shrinkV (Var obs m1 m2) = 
-        let lowB1 = getAllBlocks obs m1
-            lowB2 = getAllBlocks obs m2
+        let lowB1 = getBlocksBelow obs m1
+            lowB2 = getBlocksBelow obs m2
             highLabs = (labelsBelow H) \\ (labelsBelow obs) 
             highB1 = concatMap (getBlocksAtLevel m1) highLabs
             highB2 = concatMap (getBlocksAtLevel m2) highLabs
@@ -188,7 +188,7 @@ instance ShrinkV a => ShrinkV (Frame a) where
         | stamp1 /= stamp2 = error "unequal stamps (shrinkV Frame)"
         | otherwise = [] -- TODO: Write this 
         
-shrinkStacks :: Variation State -> [Variation State]
+shrinkStacks :: Variation (State i m) -> [Variation (State i m)]
 shrinkStacks (Var obs st1 st2) = 
     [Var obs st1{stack = stk1'} st2{stack = stk2'} 
          | Var obs stk1' stk2' <- shrinkV $ Var obs (stack st1) (stack st2)]
@@ -226,14 +226,14 @@ removeRegStkElt r' (StkElt (pc,l,rs,r)) =
     let (front, _:back) = splitAt r' (unRegSet rs) 
     in StkElt (pc,l, RegSet $ front ++ back, cDecr r' r)
 
-removeReg :: State -> RegPtr -> State
+removeReg :: IMemC i => State i m -> RegPtr -> State i m
 removeReg st@State{..} r = 
    let (front, _:back) = splitAt r (unRegSet regs) 
-       imem'  = map (decrRegInstr r) imem
+       imem'  = mapIMem (decrRegInstr r) imem
        stack' = mapStack' (removeRegStkElt r) stack
    in st{imem = imem', regs = RegSet $ front ++ back, stack = stack'}
 
-removeRegisters :: Variation State -> [Variation State]
+removeRegisters :: IMemC i => Variation (State i m) -> [Variation (State i m)]
 removeRegisters (Var obs st1 st2) =
     let rs1 = unRegSet $ regs st1
         rs2 = unRegSet $ regs st2
@@ -245,7 +245,7 @@ removeRegisters (Var obs st1 st2) =
 --- Shrink Register Contents --- 
 
 -- Should only be done when pc's are low
-shrinkRegisterContentsV :: Variation State -> [Variation State]
+shrinkRegisterContentsV :: Variation (State i m) -> [Variation (State i m)]
 shrinkRegisterContentsV (Var obs st1 st2) = 
     if isLow (pcLab $ pc st1) obs && isLow (pcLab $ pc st2) obs then
     [ Var obs st1{regs = RegSet regs1'} 
@@ -254,6 +254,7 @@ shrinkRegisterContentsV (Var obs st1 st2) =
         <- shrinkV $ Var obs (unRegSet $ regs st1) (unRegSet $ regs st2)]
     else []
 
+{-
 --- Shrink Instructions --- 
 
 instance ShrinkV Instr where
@@ -261,18 +262,18 @@ instance ShrinkV Instr where
         | x == x' = [Var o y y | y <- shrink x]
         | otherwise = error "Instructions not the same in shrinkV"
 
-shrinkInstructionsV :: Variation State -> [Variation State]
+shrinkInstructionsV :: IMemC i => Variation (State i m) -> [Variation (State i m)]
 shrinkInstructionsV (Var obs st1 st2) = 
     [ Var obs st1{imem = imem1'} st2{imem = imem2'} 
           | Var obs imem1' imem2' 
               <- shrinkV $ Var obs (imem st1) (imem st2)]
-
+-}
 --- Combining everything ---
 
-instance ShrinkV State where
+instance IMemC i => ShrinkV (State i m) where
     shrinkV v@(Var obs st1 st2) = 
         removeRegisters v 
         ++ shrinkStacks v
         ++ shrinkRegisterContentsV v
-        ++ shrinkInstructionsV v
+--        ++ shrinkInstructionsV v
     

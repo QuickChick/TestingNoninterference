@@ -1,4 +1,5 @@
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE RecordWildCards, MultiParamTypeClasses, FunctionalDependencies, 
+  FlexibleInstances #-}
 module Memory where
 
 import Labels
@@ -24,6 +25,17 @@ stamp (Block _ l) = l
 putStamp :: Label -> Block -> Block
 putStamp l (Block n _) = Block n l
 
+class (Eq m, Show m, Read m) => MemC m a | m -> a where
+    next :: m -> Label -> Int 
+    getFrame :: m -> Block -> Maybe (Frame a)
+    empty :: m
+    updFrame :: m -> Block -> Frame a -> Maybe m
+    allocate :: m -> Label -> Frame a -> (Block, m)
+
+    getBlocksAtLevel :: m -> Label -> [Block]
+    getBlocksBelow   :: Label -> m -> [Block]
+    mapMemory :: (Frame a -> Frame a) -> m -> m
+
 -- Memory:
 -- * Contents: A map from Blocks to Frames
 -- * Sizes   : A map from stamps to the length of the list of 
@@ -32,32 +44,20 @@ data Mem a = Mem { contents :: Map Block (Frame a)
                  , sizes    :: Map Label Int}
             deriving (Eq, Show, Read)
 
--- Helpers for execution
-next :: Mem a -> Label -> Int
-next Mem{..} l = Map.findWithDefault 0 l sizes
+instance (Eq a, Show a, Read a) => MemC (Mem a) a where
+    next Mem{..} l = Map.findWithDefault 0 l sizes
+    getFrame Mem{..} block = Map.lookup block contents
+    empty = Mem Map.empty Map.empty
+    updFrame m@Mem{..} b f = do 
+      _ <- getFrame m b
+      return $ Mem (Map.insert b f contents) sizes
+    allocate m@Mem{..} l f = 
+        (b, Mem (Map.insert b f contents)
+              (Map.insertWith (+) l 1 sizes))
+        where b = Block (next m l) l
+    
+    getBlocksAtLevel m l = map (flip Block l) [0..(next m l- 1)]
 
-getFrame :: Mem a -> Block -> Maybe (Frame a)
-getFrame Mem{..} block = Map.lookup block contents
+    getBlocksBelow l m = concatMap (getBlocksAtLevel m) (labelsBelow l)
 
-empty :: Mem a
-empty = Mem Map.empty Map.empty
-
-updFrame :: Mem a -> Block -> Frame a -> Maybe (Mem a)
-updFrame m@Mem{..} b f = do 
-  _ <- getFrame m b
-  return $ Mem (Map.insert b f contents) sizes
-
-allocate :: Mem a -> Label -> Frame a -> (Block, Mem a)
-allocate m@Mem{..} l f = (b, Mem (Map.insert b f contents)
-                                    (Map.insertWith (+) l 1 sizes))
-                          where b = Block (next m l) l
-
--- Helpers for testing
-getBlocksAtLevel :: Mem a -> Label -> [Block]
-getBlocksAtLevel m l = map (flip Block l) [0..(next m l- 1)]
-
-getAllBlocks :: Label -> Mem a -> [Block]
-getAllBlocks l m = concatMap (getBlocksAtLevel m) (labelsBelow l)
-
-mapMemory :: (Frame a -> Frame b) -> Mem a -> Mem b 
-mapMemory f m@Mem{..} = m{contents = Map.map f contents}
+    mapMemory f m@Mem{..} = m{contents = Map.map f contents}

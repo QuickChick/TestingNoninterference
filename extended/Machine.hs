@@ -1,4 +1,5 @@
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE RecordWildCards, MultiParamTypeClasses, FunctionalDependencies, 
+  FlexibleInstances, FlexibleContexts #-}
 module Machine where
 
 import Control.Arrow
@@ -9,19 +10,20 @@ import Rules
 import Labels
 import Instructions
 import Primitives
+import Memory
 
-data State = State { imem  :: IMem
-                   , mem   :: Memory
-                   , stack :: Stack
-                   , regs  :: RegSet
-                   , pc    :: PtrAtom } 
-           deriving (Eq, Show, Read)
+data State i m = State { imem  :: i
+                       , mem   :: m
+                       , stack :: Stack
+                       , regs  :: RegSet
+                       , pc    :: PtrAtom } 
+               deriving (Eq, Show, Read)
 
 -- Execution - for now "correct"
 -- I tried to get all the changing parts inside a let for easier tweaking later
-exec' :: RuleTable -> State -> Instr -> Maybe State
-exec' t s@(State {..}) instruction = do
-  let (PAtm addrPc lpc) = pc 
+exec' :: MemC m Atom => RuleTable -> State i m -> Instr -> Maybe (State i m)
+exec' t s@State{..} instruction = do
+  let (PAtm addrPc lpc) = pc
   case instruction of 
     Lab r1 r2 -> do
       -- TRUE, BOT, LabPC
@@ -177,26 +179,13 @@ exec' t s@(State {..}) instruction = do
       return s{regs = regs', pc = pc'}
     Halt -> Nothing
 
-exec :: RuleTable -> State -> Maybe State
-exec r s@State{..} = do 
-  instruction <- instrLookup imem pc
+exec :: (IMemC i, MemC m Atom) => RuleTable -> State i m -> Maybe (State i m)
+exec r s = do 
+  instruction <- instrLookup (imem s) (pc s)
   exec' r s instruction
 
-execN :: Int -> RuleTable -> State -> [State]
+execN :: (IMemC i, MemC m Atom) => Int -> RuleTable -> State i m -> [State i m]
 execN 0 t s = [s]
 execN n t s = case exec t s of
                 Just s' -> s : execN (n-1) t s'
                 Nothing -> [s]
-
--- All Values should be Ints
-observe :: Label -> Trace -> [Value]
-observe obs [] = []
-observe obs ((v,l'):t') 
-    | isLow l' obs = v : observe obs t'
-    | otherwise  = observe obs t'
-
-observeComp :: [Value] -> [Value] -> Bool
-observeComp (v1:t1) (v2:t2) = v1 == v2 && observeComp t1 t2
-observeComp _ _ = True
-    
-    

@@ -1,4 +1,4 @@
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE RecordWildCards, FlexibleContexts #-}
 
 module LLNI where
 
@@ -12,6 +12,7 @@ import Primitives
 import Labels
 import Instructions
 import Rules
+import Memory
 
 import Control.Monad
 
@@ -24,7 +25,8 @@ import Pretty
 import Text.PrettyPrint (($$), text)
 import qualified Text.PrettyPrint as PP
 
-propLLNI :: Flags -> RuleTable -> Variation State -> Property
+propLLNI :: (MemC m Atom, IMemC i, Indist i, Indist m) => 
+            Flags -> RuleTable -> Variation (State i m) -> Property
 propLLNI Flags{..} t (Var obs st1 st2) =
 --    traceShow ("Here!") $
     let sts1 = execN noSteps t st1
@@ -41,6 +43,3 @@ propLLNI Flags{..} t (Var obs st1 st2) =
 --    in property $ --whenFail (putStrLn (show sts1') >> putStrLn (show sts2')) $
        $ (and $ zipWith (indist obs) sts1' sts2')
 
-testLLNI :: Flags -> RuleTable -> Property
-testLLNI f t = 
-    forAllShrink (genVariationState f) (const []) $ propLLNI f t

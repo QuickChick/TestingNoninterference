@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 module MSNI where
 
 import Debug.Trace
@@ -10,6 +11,7 @@ import Primitives
 import Labels
 import Instructions
 import Rules
+import Memory
 
 import Control.Monad
 
@@ -24,20 +26,17 @@ import qualified Text.PrettyPrint as PP
 
 import System.IO.Unsafe
 
-testMSNI :: Flags -> RuleTable -> Property
-testMSNI f t = 
-  forAllShrink (genVariationState f) (const []) $ propMSNI f t
-
-propMSNI :: Flags -> RuleTable -> Variation State -> Property
+propMSNI :: (MemC m Atom, IMemC i, Indist i, Indist m) => 
+            Flags -> RuleTable -> Variation (State i m) -> Property
 propMSNI f t (Var obs st1 st2) = 
     let sts1 = execN (noSteps f) t st1
         sts2 = execN (noSteps f) t st2
     in indist obs st1 st2 ==> msniAux f obs st1 st2 (tail sts1) (tail sts2)
 
-isLowState :: Label -> State -> Bool
+isLowState :: Label -> State i m -> Bool
 isLowState obs st = isLow (pcLab $ pc st) obs
 
-isHighState :: Label -> State -> Bool
+isHighState :: Label -> State i m -> Bool
 isHighState obs st = not $ isLow (pcLab $ pc st) obs
 
 dbg :: String -> Bool -> Bool
@@ -46,8 +45,9 @@ dbg s x = x
 
 -- Invariant: indist st1 st2 
 -- -> Both low or both high! 
-msniAux :: Flags -> Label -> 
-           State -> State -> [State] -> [State] -> Bool
+msniAux :: (MemC m Atom, IMemC i, Indist m, Indist i) => 
+           Flags -> Label -> 
+           (State i m) -> (State i m) -> [(State i m)] -> [(State i m)] -> Bool
 msniAux f _ _ _ [] [] = True
 msniAux f obs st1 st2 [] (st2':sts2)
     | isLowState obs st2 || isLowState obs st2' = True -- Termination insensitive

@@ -95,7 +95,7 @@ instance PP StkElt where
 instance PP Stack where
     pp (Stack s) = text "Stack: " $$ PP.nest 2 (pp s)
 
-instance (Show a, PP a) => PP (Mem a) where
+instance (Show a, Read a, Eq a, PP a) => PP (Mem a) where
     pp m = text "Memory: " $$ PP.nest 2 (PP.vcat $ map ppLevel [L, M1, M2, H])
         where ppLevel :: Label -> Doc 
               ppLevel l = let blocks = getBlocksAtLevel m l 
@@ -105,7 +105,7 @@ instance (Show a, PP a) => PP (Mem a) where
                                _  -> text "Level " <+> pp l <> PP.colon $$ 
                                      PP.nest 2 (pp frames)
 
-instance PP State where
+instance PP (State IMem (Mem Atom)) where
     pp s@State{..} = 
         text "State:" $$ PP.nest 2 (
           text "PC: " <+> pp pc $$                                    
@@ -194,7 +194,7 @@ instance PP (Variation Memory) where
                             pp (zipWith (Var obs) frames1 frames2)
                         else ppVar frames1 frames2
 
-instance PP (Variation State) where
+instance PP (Variation (State IMem (Mem Atom))) where
     pp (Var obs st1 st2) = 
         text "Observer: " <+> pp obs $$ 
         text "State:" $$ PP.nest 2 (

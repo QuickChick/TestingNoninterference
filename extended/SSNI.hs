@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 module SSNI where
 
 import Debug.Trace
@@ -10,6 +11,7 @@ import Primitives
 import Labels
 import Instructions
 import Rules
+import Memory
 
 import Control.Monad
 
@@ -22,11 +24,8 @@ import Pretty
 import Text.PrettyPrint (($$), text)
 import qualified Text.PrettyPrint as PP
 
-testSSNI :: Flags -> RuleTable -> Property
-testSSNI f t = 
-  forAllShrink (genVariationState f) (const []) $ propSSNI f t
-
-propSSNI :: Flags -> RuleTable -> Variation State -> Property
+propSSNI :: (MemC m Atom, IMemC i, Indist m, Indist i) => 
+            Flags -> RuleTable -> Variation (State i m)-> Property
 propSSNI f t (Var obs st1 st2) = 
   let collect' = case collectF f of
                    CollectInstrCode -> 

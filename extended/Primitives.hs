@@ -1,4 +1,5 @@
-{-# LANGUAGE TupleSections, RecordWildCards #-}
+{-# LANGUAGE TupleSections, RecordWildCards, TypeSynonymInstances,
+  FlexibleInstances #-}
 module Primitives where
 
 import Memory
@@ -6,6 +7,13 @@ import Labels
 import Instructions
 
 type IMem = [Instr]
+
+class IMemC im where 
+    instrLookup :: im -> PtrAtom -> Maybe Instr
+    mapIMem :: (Instr -> Instr) -> im -> im
+    fromInstrList :: [Instr] -> im
+    toInstrList   :: im -> [Instr]
+    imLength      :: im -> Int
 
 index :: Int -> [a] -> Maybe a
 index _ []    = Nothing
@@ -17,8 +25,12 @@ update _ _ [] = Nothing
 update 0 a (_:t) = Just $ a : t 
 update n a (h:t) = fmap (h:) $ update (n-1) a t
 
-instrLookup :: IMem -> PtrAtom -> Maybe Instr
-instrLookup m (PAtm i _) = index i m
+instance IMemC IMem where
+    instrLookup m (PAtm i _) = index i m
+    mapIMem = map
+    fromInstrList = id
+    toInstrList = id
+    imLength = length
 
 inc :: PtrAtom -> PtrAtom
 inc (PAtm i l) = PAtm (i+1) l
@@ -63,38 +75,34 @@ joinPtrAtom (PAtm n l) l' = PAtm n $ l `lub` l'
 
 type Memory = Mem Atom
 
-alloc :: Int -> Label -> Label -> Atom -> Memory -> Maybe (Block, Memory)
+alloc :: MemC m a => Int -> Label -> Label -> a -> m -> Maybe (Block, m)
 alloc size label stamp atom mem 
       | size < 0 = Nothing
       | size > 42 = Nothing -- Discard *large* allocations
       | otherwise = 
           Just $ allocate mem stamp $ Frame stamp label $ replicate size atom
     
-load :: Memory -> Pointer -> Maybe Atom
+load :: MemC m a => m -> Pointer -> Maybe a
 load m (Ptr frame address) = do 
   Frame _ _ as <- getFrame m frame
   index address as
 
-store :: Memory -> Pointer -> Atom -> Maybe Memory
+store :: MemC m a => m -> Pointer -> a -> Maybe m
 store m (Ptr f addr) a = do
   Frame stamp lab as <- getFrame m f
   as' <- update addr a as
   updFrame m f $ Frame stamp lab as'
 
-msize :: Memory -> Pointer -> Maybe Int
+msize :: MemC m a => m -> Pointer -> Maybe Int
 msize m (Ptr fp i) = do
   Frame _ _ as <- getFrame m fp
   return $ length as
     
-mlab :: Memory -> Pointer -> Maybe Label
+mlab :: MemC m a => m -> Pointer -> Maybe Label
 mlab m (Ptr fp i) = do
   Frame _ l _ <- getFrame m fp
   return l
 
-type Trace = [(Value, Label)]
-
 data Variation a = Var Label a a
                  deriving (Eq, Show, Read)
 
--- Convert All Blocks taking care of EVERYTHING
---class 

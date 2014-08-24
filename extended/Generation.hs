@@ -1,4 +1,5 @@
-{-# LANGUAGE RecordWildCards, TupleSections #-}
+{-# LANGUAGE RecordWildCards, TupleSections, FlexibleContexts, 
+  FlexibleInstances #-}
 module Generation where
 
 import Test.QuickCheck
@@ -132,9 +133,9 @@ containsRet :: Stack -> Bool
 containsRet (Stack s) = not $ null s
 
 -- Generates a structurally valid instruction
-ainstrSSNI :: Flags -> State -> Gen Instr 
+ainstrSSNI :: IMemC i => Flags -> (State i m) -> Gen Instr 
 ainstrSSNI f st@State{..} = 
-    let (dptr, cptr, num, lab) = groupRegisters (length imem) 
+    let (dptr, cptr, num, lab) = groupRegisters (imLength imem) 
                                  (unRegSet regs) [] [] [] [] 0
         genRegPtr = choose (0, length (unRegSet regs) - 1)
         ifNaive x y = if genInstrDist f == Naive then y else x
@@ -167,53 +168,17 @@ ainstrSSNI f st@State{..} =
             | not $ null dptr] ++
            [(10, liftM2 Mov genRegPtr genRegPtr)]
 
-popInstrSSNI :: Flags -> State -> Gen State 
+popInstrSSNI :: IMemC i => Flags -> (State i m) -> Gen (State i m) 
 popInstrSSNI f s@State{..} = do 
-  imem' <- ainstrSSNI f s >>= return . replicate (length imem) 
+  imem' <- ainstrSSNI f s >>= return . fromInstrList . replicate (imLength imem) 
   return s{imem = imem'}
 
-{-
--- Generates a structurally valid instruction
-ainstrLLNI :: State -> Gen Instr 
-ainstrLLNI st@State{..} = 
-    let (dptr, cptr, num, lab) = groupRegisters (length imem) 
-                                 (unRegSet regs) [] [] [] [] 0
-        genRegPtr = choose (0, length (unRegSet regs) - 1)
-    in frequency $ 
-           [(7, pure Noop)
-           ,(0, pure Halt)
-           ,(10, liftM PcLab genRegPtr)
-           ,(10, liftM2 Lab genRegPtr genRegPtr)] ++
-           [(10, liftM2 MLab (elements dptr) genRegPtr) | not $ null dptr] ++
-           [(10, liftM2 PutLab (genLabelBelow H) genRegPtr)] ++
-           [(10, liftM3 BCall (elements cptr) (elements lab) genRegPtr)
-            | not $ null lab || null cptr ] ++
-           [(10, pure BRet) | containsRet stack] ++
-           [(10, liftM3 Alloc (elements num) (elements lab) genRegPtr)
-            | not $ null num || null lab] ++
-           [(10, liftM2 Load (elements dptr) genRegPtr) 
-            | not $ null dptr] ++
-           [(10, liftM2 Store (elements dptr) genRegPtr)
-            | not $ null dptr] ++
-           [(10, liftM Jump (elements cptr)) | not $ null cptr] ++
-           [(10, liftM2 Bnz (choose (-1, 2)) (elements num))
-            | not $ null num] ++
-           [(10, liftM3 PSetOff (elements dptr) (elements num) genRegPtr)
-            | not $ null dptr || null num] ++
-           [(10, liftM2 Put arbitrary genRegPtr)] ++
-           [(10, liftM4 BinOp arbitrary (elements num) (elements num) genRegPtr)
-            | not $ null num] ++
-           [(10, liftM2 MSize (elements dptr) genRegPtr) | not $ null dptr] ++
-           [(10, liftM2 PGetOff (elements dptr) genRegPtr) 
-            | not $ null dptr] ++
-           [(10, liftM2 Mov genRegPtr genRegPtr)]
--}
+copyInstructions :: IMemC i => Zipper (Maybe Instr) -> (State i m) -> (State i m) 
+copyInstructions z s = s{imem = fromInstrList $ map (fromMaybe Noop) (toList z)}
 
-copyInstructions :: Zipper (Maybe Instr) -> State -> State 
-copyInstructions z s = s{imem = map (fromMaybe Noop) (toList z)}
-
-genExecHelper :: Flags -> RuleTable -> State -> State -> Int -> Zipper (Maybe Instr) 
-              -> Gen State
+genExecHelper :: (IMemC i, MemC m Atom) =>Flags -> RuleTable -> State i m -> 
+                 State i m -> Int -> Zipper (Maybe Instr) 
+              -> Gen (State i m)
 genExecHelper f _ s0 s 0 z = return $ copyInstructions z s0
 genExecHelper f table s0 s tries zipper = {- trace "GenExec" $ -} do
   (zipper',i) <- case current zipper of 
@@ -234,12 +199,13 @@ genExecHelper f table s0 s tries zipper = {- trace "GenExec" $ -} do
               return $ copyInstructions zipper' s0
     Nothing -> return $ copyInstructions zipper' s0
 
-popInstrLLNI :: Flags -> RuleTable -> State -> Gen State
+popInstrLLNI :: (IMemC i, MemC m Atom) => Flags -> RuleTable -> State i m -> 
+                Gen (State i m)
 popInstrLLNI f table s@State{..} = do
-  let len = length imem
+  let len = imLength imem
   genExecHelper f table s s (3 * len) (fromList $ replicate len Nothing) 
 
-popInstr :: Flags -> State -> Gen State
+popInstr :: (IMemC i, MemC m Atom) => Flags -> (State i m) -> Gen (State i m)
 popInstr f@Flags{..} s =
     case strategy of 
       GenSSNI   -> popInstrSSNI f s
@@ -285,8 +251,8 @@ instance (SmartGen a, SmartVary a) =>  SmartVary (Frame a) where
                         dataLength' <- choose (len, len+1)
                         vectorOf dataLength' $ smartGen info
 
-varySingleFrame :: (SmartGen a, SmartVary a) => 
-                   Label -> Info -> Mem a -> Block -> Gen (Mem a)
+varySingleFrame :: (MemC m Atom) =>
+                   Label -> Info -> m -> Block -> Gen m
 varySingleFrame obs info mem block = 
     case getFrame mem block of 
       Just f -> do
@@ -296,9 +262,9 @@ varySingleFrame obs info mem block =
           Nothing   -> error "varySingleFrame Failed"
       Nothing -> error "varySingleFrame Failed"
 
-instance (SmartGen a, SmartVary a) => SmartVary (Mem a) where
+instance SmartVary (Mem Atom) where
     smartVary obs info mem = 
-        foldM (varySingleFrame obs info) mem (getAllBlocks H mem)
+        foldM (varySingleFrame obs info) mem (getBlocksBelow H mem)
 
 instance SmartVary a => SmartVary [a] where
     smartVary obs info = mapM (smartVary obs info)
@@ -320,7 +286,7 @@ instance SmartVary Stack where
         fmap Stack $ smartVary obs info s
 
 -- Vary state 
-instance SmartVary State where
+instance (MemC m Atom, IMemC i, SmartVary m) => SmartVary (State i m) where
     smartVary obs info s@State{..} 
         | isLow (pcLab pc) obs = do
            regs'  <- smartVary obs info regs
@@ -351,7 +317,7 @@ getParameters Flags{..} =
       GenByExec -> Parameters 2 4 2 8 5 noSteps 10
 
 -- Stamps start out bottom. Fill them up later!
-genInitMem :: Flags -> Gen (Memory, [(Block, Int)]) 
+genInitMem :: MemC m Atom => Flags -> Gen (m, [(Block, Int)]) 
 genInitMem flags = do 
   let Parameters{..} = getParameters flags
       aux 0 ml = return ml
@@ -363,7 +329,7 @@ genInitMem flags = do
   noFrames <- choose (minFrames, maxFrames) 
   aux noFrames (Memory.empty, [])
 
-populateFrame :: Info -> Memory -> Block -> Gen Memory
+populateFrame :: MemC m Atom => Info -> m -> Block -> Gen m
 populateFrame info mem block = 
     case getFrame mem block of 
       Just (Frame stamp label atoms) -> do
@@ -373,23 +339,24 @@ populateFrame info mem block =
           Nothing -> error "populate Failed"
       Nothing -> error "populate Failed"
 
-populateMemory :: Info -> Memory -> Gen Memory
+populateMemory :: MemC m Atom => Info -> m -> Gen m
 populateMemory info mem = 
-    foldM (populateFrame info) mem (getAllBlocks H mem)
+    foldM (populateFrame info) mem (getBlocksBelow H mem)
 
 -- LL: Add stamp instantiation - was unneeded in Coq? Suspicious...
-instantiateStamps :: State -> Gen State 
+instantiateStamps :: (State i m) -> Gen (State i m) 
 instantiateStamps = return 
 
 --defaultFlags :: Flags 
 --defaultFlags = Flags.defaultFlags
 
-genVariationState :: Flags -> Gen (Variation State)
+genVariationState :: (MemC m Atom, IMemC i, SmartVary m) => 
+                     Flags -> Gen (Variation (State i m))
 genVariationState flags = do 
   let Parameters{..} = getParameters flags
   (initMem, dfs) <- genInitMem flags
   codeSize <- choose (minCodeSize, maxCodeSize)
-  let imem = replicate codeSize Noop
+  let imem = fromInstrList $ replicate codeSize Noop
       info = MkInfo flags codeSize dfs noRegisters
   pc    <- smartGen info
   regs  <- smartGen info
@@ -401,4 +368,3 @@ genVariationState flags = do
   obs <- genLabelBetweenLax L H -- in case we change to arbitrary number
   st' <- smartVary obs info st 
   return $ Var obs st st'
-  

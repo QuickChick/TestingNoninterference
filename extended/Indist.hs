@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts, FlexibleInstances #-}
 module Indist where
 
 import Data.Maybe
@@ -82,9 +83,9 @@ instance Indist a => Indist (Frame a) where
 -- Memory Indistinguishability
 -- * Get all memory frames with stamps below the obs level, in the same order
 -- * Ensure they are pairwise indistinguishable
-instance Indist a => Indist (Mem a) where
+instance Indist (Mem Atom) where
     indist obs m1 m2 = indist obs (getFrames m1) (getFrames m2)
-        where getFrames m = catMaybes $ map (getFrame m) (getAllBlocks obs m)
+        where getFrames m = catMaybes $ map (getFrame m) (getBlocksBelow obs m)
 
 -- Cropping the high part of the stack
 
@@ -120,7 +121,7 @@ debug :: String -> Bool -> Bool
 --debug s x = if not x then unsafePerformIO $ do putStrLn s >> return x else x
 debug s x = x
 
-instance Indist State where 
+instance (IMemC i, MemC m Atom, Indist m, Indist i) =>Indist (State i m) where 
     indist obs (State imem1 mem1 s1 regs1 pc1) (State imem2 mem2 s2 regs2 pc2) =
         debug "IMemory" (indist obs imem1 imem2)
         && debug "Memory" (indist obs mem1 mem2)
