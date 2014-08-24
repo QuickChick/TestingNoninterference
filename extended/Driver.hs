@@ -200,8 +200,10 @@ checkTimeoutProperty flags table = do
                     let counters' = counters { run_c  = run_c  counters + numTests 
                                , disc_c = disc_c counters + realDiscards }
                     in counters' `seq` checkPropLoop discRef counters' (microsecs - usedMicrosecs)
-                Right (GaveUp {}) -> 
-                    putStrLn "GaveUp!?" >> error "Bailing out!"
+                Right (GaveUp { numTests }) -> 
+                  return $ counters { run_c  = run_c  counters + numTests
+                                    , disc_c = disc_c counters + realDiscards }
+--                    putStrLn "GaveUp!?" >> error "Bailing out!"
                 Right (NoExpectedFailure {}) -> 
                     putStrLn "NoExpectedFailure!?" >> error "Bailing out"
 

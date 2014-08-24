@@ -52,7 +52,7 @@ defaultFlags = Flags { mode = ModeQuickCheck
                      , noSteps  = 42
                      , maxTests = 10000
                      , mutantNo = Nothing
-                     , discardRatio = 5
+                     , discardRatio = 10
                      , showCounters = False
                      , printLatex = False
                      , timeout = 10
