@@ -82,7 +82,7 @@ checkProperty :: Flags -> IORef Int -> RuleTable -> Integer -> IO (Either Int Re
 -- Returns used time in microseconds and either number of tests run (until timeout) or a result
 checkProperty flags discardRef table microsecs = do
     let prop = mkProperty flags table 
-        isChatty = showCounters flags
+        isChatty = isVerbose flags
         isLatex  = printLatex   flags
     -- gen <- newQCGen 
     testsRun <- newIORef 0 
@@ -303,11 +303,13 @@ testSingle f@Flags{..} =
   let table = case mutantNo of
                 Nothing -> defaultTable
                 Just n  -> mutateTable defaultTable !! n in 
-  quickCheckWith
-    stdArgs { maxSuccess      = maxTests     
-            , maxDiscardRatio = discardRatio 
-            , chatty          = showCounters && not printLatex }
-    $ mkProperty f table
+  do
+  res <- quickCheckWithResult
+           stdArgs { maxSuccess      = maxTests     
+                   , maxDiscardRatio = discardRatio 
+                   , chatty          = isVerbose && not printLatex }
+           $ mkProperty f table
+  putStrLn $ show res
 
 main :: IO ()
 main = do
