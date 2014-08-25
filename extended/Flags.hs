@@ -36,8 +36,10 @@ data Flags = Flags { mode :: QCMode
                    , maxTests :: Int
                    , mutantNo :: Maybe Int
                    , discardRatio :: Int
-                   , showCounters :: Bool
-                   , printLatex   :: Bool 
+                   , showCounters :: Bool -- CH: this flag has confusing semantics
+                     -- is it show counterexamples? or show the quickcheck counter?
+                     -- currently it seems that the answer is: both
+                   , printLatex   :: Bool
                    , timeout      :: Int 
                    , doShrink     :: Bool 
                    , collectF     :: CollectF }

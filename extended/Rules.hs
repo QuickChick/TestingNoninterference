@@ -25,7 +25,7 @@ data RuleExpr = EBot
 instance Show RuleExpr where
     show EBot = "EBot"
     show (EVar (s,_)) = "EVar " ++ s
-    show (EJoin e1 e2) = "JOIN " ++ show e1 ++ " " ++ show e2
+    show (EJoin e1 e2) = "JOIN ( " ++ show e1 ++ " " ++ show e2 ++ " )"
 
 data SideCond = ATrue
               | ALe   RuleExpr RuleExpr

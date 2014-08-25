@@ -107,7 +107,7 @@ exec' t s@State{..} instruction = do
       Atom v lv <- readR r2 regs
       Atom _v' lv' <- load mem p
       lf <- mlab mem p
-      (Just rlab, rlpc) <- runTMU t STORE [lp,lf,lv,lv'] lpc
+      (Just rlab, rlpc) <- runTMU t WRITE [lp,lf,lv,lv'] lpc
       let pc'    = PAtm (addrPc + 1) rlpc
       mem' <- store mem p (Atom v rlab)
       return s{mem = mem', pc = pc'}
