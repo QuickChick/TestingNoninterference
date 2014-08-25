@@ -17,7 +17,7 @@ flowsTo M1 H  = True
 flowsTo M2 M2 = True
 flowsTo M2 H  = True
 flowsTo H  H  = True
-flowsTo l1 l2 = False
+flowsTo _  _ = False
 
 -- Aliases
 isLow :: Label -> Label -> Bool
@@ -36,7 +36,7 @@ lub L l = l
 lub l L = l
 lub M1 M2 = H
 lub M2 M1 = H
-lub x  x' = x -- x == x'
+lub x  _x' = x -- x == _x'
 
 meet :: Label -> Label -> Label
 meet L  _  = L
@@ -45,7 +45,7 @@ meet H  l  = l
 meet l  H  = l
 meet M1 M2 = L
 meet M2 M1 = L
-meet x  x' = x -- x == x'
+meet x  _x' = x -- x == _x'
 
 -- All Smaller Labels
 labelsBelow :: Label -> [Label]

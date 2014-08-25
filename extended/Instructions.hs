@@ -47,6 +47,7 @@ data Instr = Lab     RegPtr RegPtr
            | Bnz     Int    RegPtr
            | Load    RegPtr RegPtr
            | Store   RegPtr RegPtr
+           | Write   RegPtr RegPtr
            | Alloc   RegPtr RegPtr RegPtr
            | PSetOff RegPtr RegPtr RegPtr
            | Halt    
@@ -68,6 +69,7 @@ data InstrKind = LAB
                | BNZ
                | LOAD
                | STORE
+               | WRITE
                | ALLOC
                | PSETOFF
                | HALT
@@ -90,6 +92,7 @@ allInstrKind = [ LAB
                , BNZ
                , LOAD
                , STORE
+               , WRITE
                , ALLOC
                , PSETOFF
                , HALT
@@ -111,9 +114,10 @@ opcodeOfInstr (Jump _       ) = Just JUMP
 opcodeOfInstr (Bnz _ _      ) = Just BNZ
 opcodeOfInstr (Load _ _     ) = Just LOAD
 opcodeOfInstr (Store _ _    ) = Just STORE
+opcodeOfInstr (Write _ _    ) = Just WRITE
 opcodeOfInstr (Alloc _ _ _  ) = Just ALLOC
 opcodeOfInstr (PSetOff _ _ _) = Just PSETOFF
 opcodeOfInstr (PGetOff _ _  ) = Just PGETOFF
 opcodeOfInstr (MSize _ _    ) = Just MSIZE
 opcodeOfInstr (Mov _ _      ) = Just MOV
-opcodeOfInstr (_            ) = Nothing 
+opcodeOfInstr (Halt         ) = Nothing 

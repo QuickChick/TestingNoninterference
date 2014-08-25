@@ -13,7 +13,8 @@ import qualified Data.Map as Map
 data MVec = MVec { mLab1 :: Label
                  , mLab2 :: Label
                  , mLab3 :: Label 
-                 , mLab4 :: Label }
+                 , mLab4 :: Label
+                 , mLabPC :: Label}
 
 type Var = MVec -> Label
 
@@ -45,7 +46,7 @@ evalExpr m (EVar (_,l)) = l m
 evalExpr m (EJoin r1 r2) = evalExpr m r1 `lub` evalExpr m r2
 
 evalCond :: MVec -> SideCond -> Bool
-evalCond m ATrue = True
+evalCond _m ATrue = True
 evalCond m (AAnd c1 c2) = evalCond m c1 && evalCond m c2
 evalCond m (AOr  c1 c2) = evalCond m c1 || evalCond m c2
 evalCond m (ALe  e1 e2) = evalExpr m e1 `flowsTo` evalExpr m e2
@@ -67,7 +68,7 @@ runTMU :: RuleTable -> InstrKind -> [Label] -> Label -> RVec
 runTMU t op labs lpc = runTMU' t op (buildMVec (labs ++ repeat undefined) lpc) 
 
 buildMVec :: [Label] -> Label -> MVec
-buildMVec (l1:l2:l3:_) lpc = MVec l1 l2 l3 lpc
+buildMVec (l1:l2:l3:l4:_) lpc = MVec l1 l2 l3 l4 lpc
 buildMVec _ _ = error "buildMVec"
 
 -- Default Rule Table
@@ -83,8 +84,8 @@ parseRule s =
 
 parseSCond :: [String] -> (SideCond, [String])
 parseSCond ("TRUE":r) = (ATrue, r)
-parseSCond ("LE":rem) = let (Just e1, r') = parseExpr rem
-                            (Just e2, r'' ) = parseExpr r'
+parseSCond ("LE":r) = let (Just e1, r') = parseExpr r
+                          (Just e2, r'' ) = parseExpr r'
                       in (ALe e1 e2, r'')
 parseSCond a = error $ "Unexpected" ++ show a
 
@@ -99,7 +100,8 @@ parseExpr ("JOIN":r) = let (Just e1, r') = parseExpr r
 parseExpr ("Lab1":r) = (Just $ EVar ("Lab1",mLab1), r)
 parseExpr ("Lab2":r) = (Just $ EVar ("Lab2",mLab2), r)
 parseExpr ("Lab3":r) = (Just $ EVar ("Lab3",mLab3), r)
-parseExpr ("LabPC":r) = (Just $ EVar ("LabPC",mLab4), r)
+parseExpr ("Lab4":r) = (Just $ EVar ("Lab4",mLab4), r)
+parseExpr ("LabPC":r) = (Just $ EVar ("LabPC",mLabPC), r)
 parseExpr a = error $ "Unexpected" ++ show a
 
 defaultTable :: RuleTable
@@ -117,6 +119,7 @@ defaultTable = Map.fromList . map parseRule $ [
   "BNZ     ::=  << TRUE , __ , JOIN Lab1 LabPC >>",
   "LOAD    ::=  << TRUE , Lab3 , JOIN LabPC ( JOIN Lab1 Lab2 ) >>",
   "STORE   ::=  << LE ( JOIN Lab1 LabPC ) Lab2 , Lab3 , LabPC >>",
+  "WRITE   ::=  << LE ( JOIN ( JOIN LabPC Lab1 ) Lab3 ) ( JOIN Lab2 Lab4 ) , Lab4 , LabPC >>",
   "ALLOC   ::=  << TRUE , JOIN Lab1 Lab2 , LabPC >>",
   "PSETOFF ::=  << TRUE , JOIN Lab1 Lab2 , LabPC >>",
   "PGETOFF ::=  << TRUE , Lab1 , LabPC >>",

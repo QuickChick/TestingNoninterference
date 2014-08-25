@@ -2,10 +2,6 @@
   FlexibleInstances, FlexibleContexts #-}
 module Machine where
 
-import Control.Arrow
-
-import Debug.Trace
-
 import Rules
 import Labels
 import Instructions
@@ -81,8 +77,8 @@ exec' t s@State{..} instruction = do
       Atom (VInt i) k  <- readR r1 regs
       Atom (VLab l) k' <- readR r2 regs
       (Just rlab, rlpc) <- runTMU t ALLOC [k,k',l] lpc
-      let stamp  = k `lub` k' `lub` lpc
-      (block, mem') <- alloc i l stamp (Atom (VInt 0) bot) mem
+      let stmp  = k `lub` k' `lub` lpc
+      (block, mem') <- alloc i l stmp (Atom (VInt 0) bot) mem
       let result = VPtr $ Ptr block 0
           pc'    = PAtm (addrPc + 1) rlpc
       regs' <- writeR r3 (Atom result rlab) regs
@@ -95,7 +91,7 @@ exec' t s@State{..} instruction = do
       (Just rlab, rlpc) <- runTMU t LOAD [k,c,l] lpc
       let result = v
           pc'    = PAtm (addrPc + 1) rlpc
-      regs' <- writeR r2 (Atom v rlab) regs
+      regs' <- writeR r2 (Atom result rlab) regs
       return s{regs = regs', pc = pc'}
     Store r1 r2 -> do
       -- LE (Join k LabPC) c, l, LabPC
@@ -103,8 +99,16 @@ exec' t s@State{..} instruction = do
       Atom v l <- readR r2 regs
       c <- mlab mem p
       (Just rlab, rlpc) <- runTMU t STORE [k,c,l] lpc
-      let result = v
-          pc'    = PAtm (addrPc + 1) rlpc
+      let pc'    = PAtm (addrPc + 1) rlpc
+      mem' <- store mem p (Atom v rlab)
+      return s{mem = mem', pc = pc'}
+    Write r1 r2 -> do
+      Atom (VPtr p) lp <- readR r1 regs
+      Atom v lv <- readR r2 regs
+      Atom _v' lv' <- load mem p
+      lf <- mlab mem p
+      (Just rlab, rlpc) <- runTMU t STORE [lp,lf,lv,lv'] lpc
+      let pc'    = PAtm (addrPc + 1) rlpc
       mem' <- store mem p (Atom v rlab)
       return s{mem = mem', pc = pc'}
     Jump r1 -> do
@@ -122,7 +126,7 @@ exec' t s@State{..} instruction = do
       return s{pc = pc'}
     PSetOff r1 r2 r3 -> do
       -- True, Join k1 k2, LabPC
-      Atom (VPtr (Ptr fp addr)) k1 <- readR r1 regs
+      Atom (VPtr (Ptr fp _off)) k1 <- readR r1 regs
       Atom (VInt n) k2 <- readR r2 regs
       (Just rlab, rlpc) <- runTMU t PSETOFF [k1,k2] lpc
       let result = VPtr (Ptr fp n)
@@ -163,9 +167,9 @@ exec' t s@State{..} instruction = do
       return s{regs = regs', pc = pc'}
     PGetOff r1 r2 -> do
       -- True, k, LabPC
-      Atom (VPtr (Ptr fp addr')) k <- readR r1 regs
+      Atom (VPtr (Ptr _fp off)) k <- readR r1 regs
       (Just rlab, rlpc) <- runTMU t PGETOFF [k] lpc
-      let result = VInt addr'
+      let result = VInt off
           pc'    = PAtm (addrPc + 1) rlpc
       regs' <- writeR r2 (Atom result rlab) regs
       return s{regs = regs', pc = pc'}
@@ -185,7 +189,7 @@ exec r s = do
   exec' r s instruction
 
 execN :: (IMemC i, MemC m Atom) => Int -> RuleTable -> State i m -> [State i m]
-execN 0 t s = [s]
-execN n t s = case exec t s of
-                Just s' -> s : execN (n-1) t s'
-                Nothing -> [s]
+execN 0 _t s = [s]
+execN n  t s = case exec t s of
+                 Just s' -> s : execN (n-1) t s'
+                 Nothing -> [s]

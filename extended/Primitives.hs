@@ -76,11 +76,11 @@ joinPtrAtom (PAtm n l) l' = PAtm n $ l `lub` l'
 type Memory = Mem Atom
 
 alloc :: MemC m a => Int -> Label -> Label -> a -> m -> Maybe (Block, m)
-alloc size label stamp atom mem 
+alloc size label stmp atom mem 
       | size < 0 = Nothing
       | size > 42 = Nothing -- Discard *large* allocations
       | otherwise = 
-          Just $ allocate mem stamp $ Frame stamp label $ replicate size atom
+          Just $ allocate mem stmp $ Frame stmp label $ replicate size atom
     
 load :: MemC m a => m -> Pointer -> Maybe a
 load m (Ptr frame address) = do 
@@ -89,17 +89,17 @@ load m (Ptr frame address) = do
 
 store :: MemC m a => m -> Pointer -> a -> Maybe m
 store m (Ptr f addr) a = do
-  Frame stamp lab as <- getFrame m f
+  Frame stmp lab as <- getFrame m f
   as' <- update addr a as
-  updFrame m f $ Frame stamp lab as'
+  updFrame m f $ Frame stmp lab as'
 
 msize :: MemC m a => m -> Pointer -> Maybe Int
-msize m (Ptr fp i) = do
+msize m (Ptr fp _i) = do
   Frame _ _ as <- getFrame m fp
   return $ length as
     
 mlab :: MemC m a => m -> Pointer -> Maybe Label
-mlab m (Ptr fp i) = do
+mlab m (Ptr fp _i) = do
   Frame _ l _ <- getFrame m fp
   return l
 
