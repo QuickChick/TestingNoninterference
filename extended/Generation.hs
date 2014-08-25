@@ -158,6 +158,8 @@ ainstr f hltWeight st@State{..} =
             | not $ null dptr] ++
            [(ifNaive 30 10, liftM2 Write (elements dptr) genRegPtr)
             | not $ null dptr] ++
+           [(ifNaive 30 10, liftM2 Update (elements dptr) (elements lab))
+            | not $ null dptr || null lab] ++
            [(10, liftM Jump (elements cptr)) | not $ null cptr] ++
            [(10, liftM2 Bnz (choose (-1, 2)) (elements num))
             | not $ null num] ++

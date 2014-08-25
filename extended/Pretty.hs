@@ -61,6 +61,7 @@ instance PP Instr where
     pp (Load r1 r2)       = text "Load"    <+> pp r1 <+> pp r2
     pp (Store r1 r2)      = text "Store"   <+> pp r1 <+> pp r2
     pp (Write r1 r2)      = text "Write"   <+> pp r1 <+> pp r2
+    pp (Update r1 r2)     = text "Update"  <+> pp r1 <+> pp r2
     pp (Alloc r1 r2 r3)   = text "Alloc"   <+> pp r1 <+> pp r2 <+> pp r3
     pp (PSetOff r1 r2 r3) = text "PSetOff" <+> pp r1 <+> pp r2 <+> pp r3
     pp (Halt)             = text "Halt"
