@@ -87,6 +87,11 @@ parseSCond ("TRUE":r) = (ATrue, r)
 parseSCond ("LE":r) = let (Just e1, r') = parseExpr r
                           (Just e2, r'' ) = parseExpr r'
                       in (ALe e1 e2, r'')
+parseSCond ("AND":r) = let (c1, r') = parseSCond r
+                           (c2, r'' ) = parseSCond r'
+                       in (AAnd c1 c2, r'')
+parseSCond ("(":r) = parseSCond r
+parseSCond (")":r) = parseSCond r
 parseSCond a = error $ "Unexpected" ++ show a
 
 parseExpr :: [String] -> (Maybe RuleExpr, [String])
