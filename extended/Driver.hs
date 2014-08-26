@@ -31,6 +31,7 @@ import Data.List
 import Data.Maybe
 
 import Control.Monad
+import Debug.Trace
 
 foundBug :: Result -> Bool
 foundBug Failure{} = True
@@ -80,7 +81,7 @@ quickCheckN n = quickCheckWith stdArgs{maxSuccess = n}
 
 checkProperty :: Flags -> IORef Int -> RuleTable -> Integer -> IO (Either Int Result,Integer)
 -- Returns used time in microseconds and either number of tests run (until timeout) or a result
-checkProperty flags discardRef table microsecs = do
+checkProperty flags discardRef table microsecs = traceShow "Here????" $ do
     let prop = mkProperty flags table 
         isChatty = isVerbose flags
         isLatex  = printLatex   flags
@@ -223,7 +224,7 @@ means xs =
         harmonic   | 0 `elem` fins    = Just 0 -- See Note [Harmonic Mean]
                    | n == 0           = Nothing
                    | otherwise        = Just $ double $ n / sum (map recip fins)
-    in (arithmetic, harmonic, geometric)
+    in (arithmetic, geometric, harmonic)
 
 computeMTTF :: TestCounters -> Maybe Rational
 computeMTTF cs = 
