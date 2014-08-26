@@ -128,7 +128,7 @@ defaultTable = Map.fromList . map parseRule $ [
   "STORE   ::=  << LE ( JOIN Lab1 LabPC ) Lab2 , Lab3 , LabPC >>",
   "WRITE   ::=  << LE ( JOIN ( JOIN LabPC Lab1 ) Lab3 ) ( JOIN Lab2 Lab4 ) , Lab4 , LabPC >>",
 -- I think I can get this with more complex encoding
-  "UPDATE  ::=  << AND ( LE Lab3 ( JOIN ( JOIN Lab4 ( JOIN LabPC Lab5 ) ) ( JOIN Lab1 Lab2 ) ) ) ( LE ( JOIN ( JOIN LabPC Lab5 ) Lab1 ) Lab2 ) , Lab4 , LabPC >>",
+  "UPDATE  ::=  << AND ( LE Lab3 ( JOIN Lab4 Lab2 ) ) ( LE ( JOIN ( JOIN LabPC Lab5 ) Lab1 ) Lab2 ) , Lab4 , LabPC >>",
 -- Simpler encoding gives us this already
 --  "UPDATE  ::=  << AND ( LE ( JOIN Lab3 ( JOIN Lab1 Lab2 ) ) ( JOIN Lab4 ( JOIN LabPC Lab5 ) ) ) ( LE ( JOIN ( JOIN LabPC Lab5 ) Lab1 ) Lab2 ) , Lab4 , LabPC >>",
   "ALLOC   ::=  << TRUE , JOIN Lab1 Lab2 , LabPC >>",
