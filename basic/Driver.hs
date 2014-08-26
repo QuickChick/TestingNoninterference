@@ -1,4 +1,5 @@
 {-# LANGUAGE ImplicitParams, FlexibleContexts, UndecidableInstances,
+    RankNTypes, 
     RecordWildCards, TupleSections, ScopedTypeVariables, NamedFieldPuns #-}
 
 module Driver where
@@ -25,7 +26,7 @@ import ObservableInst ()
 
 import System.Time
 import System.Exit
-
+import System.IO.Unsafe 
 
 import DriverUtils
 
@@ -35,23 +36,40 @@ import DriverUtils
 -- This allows us to QC with random configurations too.
 -- It's a bit naughty (not allowed in GHC < 7.4) but
 -- convenient.
+
+{- This was disabled in GHC 7.8 ... 
 instance (?dfs :: DynFlags) => Flaggy TMUDriver where
   getFlags = ?dfs
+-}
+
+instance Flaggy TMUDriver where
+  getFlags = unsafePerformIO $ getFlagsRef 
+
+
+withFlagsRef :: DynFlags -> (Flaggy DynFlags => IO a) -> IO a
+withFlagsRef fgs m
+  = do { old <- getFlagsRef 
+       ; x   <- (setFlagsRef fgs >> m)
+       ; setFlagsRef old
+       ; return x
+       }
 
 
 show_some_testcases :: Int -> IO ()
 show_some_testcases n
   = do { flags <- cmdArgs dynFlagsDflt
-       ; let ?dfs = flags
-       ; gen <- newQCGen
-       ; when (latex_output getFlags) (putStr "% ") >> print gen
+       -- ; let ?dfs = flags 
+       ; withFlagsRef flags $ 
+         do { gen <- newQCGen
+            ; when (latex_output getFlags) (putStr "% ") >> print gen
        
-       ; quickCheckWith stdArgs { maxSuccess = n
-                                , replay = Just (gen, 42)
-                                , chatty = True } $ \(as :: AS) ->
-         whenFail (return ()) $
-         collect (show as) $
-         property True }
+            ; quickCheckWith stdArgs { maxSuccess = n
+                                     , replay = Just (gen, 42)
+                                     , chatty = True } $ \(as :: AS) ->
+              whenFail (return ()) $
+              collect (show as) $
+              property True }
+       }
 
 
 
@@ -131,23 +149,22 @@ main = do { flags <- cmdArgs dynFlagsDflt
         show_timeout i = show i ++"sec"
         
         do_ifc f b
-          | let ?dfs = f
-          , PropJustProfile <- prop_test f
-          = profileTests >> return (True,0,0,Nothing)
-          | let ?dfs = f
-          , PropJustProfileVariation <- prop_test f
-          = profileVariations >> return (True,0,0,Nothing)
+          | PropJustProfile <- prop_test f
+          = withFlagsRef f (profileTests >> return (True,0,0,Nothing))
+          | PropJustProfileVariation <- prop_test f
+          = withFlagsRef f (profileVariations >> return (True,0,0,Nothing))
 
           | not $ run_timeout_tests f
           = do let f' = f {ifc_semantics_singleton = readIfcSemanticsList f}
-               let ?dfs = f'
-               putStrLn $ "% Flags: "++show f'
-               ior <- newIORef 0
-               (r,_) <- checkProperty ior (prop_test f') $ 365*24*60*60*10^6 
-               pure . (,0,0,Nothing) $ case r of
-                 Right (Success{})  -> True
-                 Right (GaveUp{..}) -> numTests > 0
-                 _          -> False
+               -- let ?dfs = f'
+               withFlagsRef f' $ do  
+                  putStrLn $ "% Flags: "++show f'
+                  ior <- newIORef 0
+                  (r,_) <- checkProperty ior (prop_test f') $ 365*24*60*60*10^6 
+                  pure . (,0,0,Nothing) $ case r of
+                    Right (Success{})  -> True
+                    Right (GaveUp{..}) -> numTests > 0
+                    _          -> False
           
           | otherwise 
           = let -- Compute MTTF in ms
@@ -216,4 +233,4 @@ main = do { flags <- cmdArgs dynFlagsDflt
         ifcsem           = readIfcSemanticsList
 
         action :: DynFlags -> IO TestCounters
-        action flags = let ?dfs = flags in checkTimeoutProperty
+        action flags = withFlagsRef flags checkTimeoutProperty

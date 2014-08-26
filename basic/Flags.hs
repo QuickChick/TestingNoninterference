@@ -4,6 +4,9 @@ module Flags where
 import Data.Typeable
 import Data.Data
 
+import System.IO.Unsafe
+import Data.IORef
+
 data GenStrategy
   = GenNaive              -- Arbitrary memory/stack/instruction stream.
   | GenWeighted
@@ -335,10 +338,17 @@ dynFlagsDflt
 -- http://hackage.haskell.org/packages/archive/QuickCheck/2.5.1.1/doc/html/src/Test-QuickCheck-Test.html#quickCheckWithResult will take you there.
 
 
+the_flags_ref :: IORef DynFlags
+the_flags_ref = unsafePerformIO (newIORef dynFlagsDflt)
+
+setFlagsRef :: DynFlags -> IO ()
+setFlagsRef fgs = writeIORef the_flags_ref fgs
+
+getFlagsRef :: IO DynFlags
+getFlagsRef = readIORef the_flags_ref
 
 class Flaggy a where
   getFlags :: a
-
 
 
 
