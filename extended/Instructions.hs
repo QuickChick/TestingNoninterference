@@ -24,6 +24,7 @@ data BinOpT = BAdd
             | BMult 
             | BFlowsTo 
             | BJoin 
+            | BEq
               deriving (Eq, Show, Read)
 
 evalBinop :: BinOpT -> Value -> Value -> Maybe Value
@@ -31,6 +32,7 @@ evalBinop BAdd  (VInt x) (VInt y) = Just . VInt $ x + y
 evalBinop BMult (VInt x) (VInt y) = Just . VInt $ x * y
 evalBinop BJoin    (VLab l1) (VLab l2) = Just . VLab $ lub l1 l2
 evalBinop BFlowsTo (VLab l1) (VLab l2) = Just . VInt $ flows l1 l2 
+evalBinop BEq v1 v2 = Just $ VInt $ if v1 == v2 then 1 else 0
 evalBinop _ _ _ = Nothing
 
 -- Conversion to register machine. 

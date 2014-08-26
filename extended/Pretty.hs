@@ -45,6 +45,7 @@ instance PP BinOpT where
     pp BMult = PP.char '*'
     pp BFlowsTo = PP.text "Flows"
     pp BJoin = PP.text "/\\"
+    pp BEq = PP.text "="
 
 instance PP Instr where
     pp (Lab r1 r2)        = text "Lab"     <+> pp r1 <+> pp r2

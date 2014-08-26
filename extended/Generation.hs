@@ -31,9 +31,12 @@ class SmartGen a where
     smartGen :: Info -> Gen a
 
 instance Arbitrary BinOpT where
-    arbitrary = elements [BAdd, BMult]
+    arbitrary = elements [BAdd, BMult, BFlowsTo, BJoin, BEq]
     shrink BMult = [BAdd]
-    shrink _     = []
+    shrink BEq = [BAdd]
+    shrink BJoin = [BAdd]
+    shrink BFlowsTo = [BEq]
+    shrink BAdd = []
 
 -- Generate a label below another
 genLabelBelow :: Label -> Gen Label
