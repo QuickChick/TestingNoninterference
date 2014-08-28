@@ -104,11 +104,11 @@ filterStack obs (Stack s) = Stack $ filter (isLowStkElt obs) s
 -- Indistinghuishability of *LOW-PC* Stack Elements
 instance Indist StkElt where
     indist obs (StkElt (pc1, l1, rs1, r1)) (StkElt (pc2, l2, rs2, r2)) =
-        indist obs pc1 pc2 
-        && indist obs l1 l2 
-        && indist obs rs1 rs2 
-        && indist obs r1 r2
-               
+        indist obs pc1 pc2  -- CH: just equality, why not call that?
+        && indist obs l1 l2 -- CH: just equality, why not call that?
+        && indist obs rs1 rs2
+        && indist obs r1 r2 -- CH: just equality, why not call that?
+
 instance Indist Stack where
     indist obs s1 s2 = 
         indist obs (unStack $ filterStack obs s1) (unStack $ filterStack obs s2)
