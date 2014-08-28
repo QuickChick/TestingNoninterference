@@ -92,13 +92,14 @@ instance Indist (Mem Atom) where
 isLowStkElt :: Label -> StkElt -> Bool
 isLowStkElt obs (StkElt (pc,_,_,_)) = isLow (pcLab pc) obs
 
-cropStack :: Label -> Stack -> Stack
-cropStack obs (Stack s) = Stack $ filter (isLowStkElt obs) s
+filterStack :: Label -> Stack -> Stack
+filterStack obs (Stack s) = Stack $ filter (isLowStkElt obs) s
 
-cropTop :: Label -> Stack -> Stack
-cropTop _ (Stack []) = Stack []
-cropTop obs s@(Stack (StkElt (pc, _, _ ,_):s')) =
-    if isLow (pcLab pc) obs then s else cropTop obs $ Stack s'
+-- CH: unused
+-- cropTop :: Label -> Stack -> Stack
+-- cropTop _ (Stack []) = Stack []
+-- cropTop obs s@(Stack (StkElt (pc, _, _ ,_):s')) =
+--     if isLow (pcLab pc) obs then s else cropTop obs $ Stack s'
 
 -- Indistinghuishability of *LOW-PC* Stack Elements
 instance Indist StkElt where
@@ -110,7 +111,7 @@ instance Indist StkElt where
                
 instance Indist Stack where
     indist obs s1 s2 = 
-        indist obs (unStack $ cropStack obs s1) (unStack $ cropStack obs s2)
+        indist obs (unStack $ filterStack obs s1) (unStack $ filterStack obs s2)
 
 -- State indistinguishability
 -- * If both pc's are high, memories and stacks must be indistinguishable
