@@ -257,9 +257,11 @@ statsForTable flags = do
                                      , "SSNI"
                                      , "MSNI (naive)"
                                      , "MSNI" ])
+           ++ " \\\\"
   putStrLn "\\midrule"
   times <- liftM transpose . statsForTableAux flags $ mutateTable defaultTable
   let ms = map means times
+  putStrLn "\\midrule"
   putStr "\\GTMeanHeader{Arithmetic mean} & "
   putStr $ concat $ intersperse " & " $ map (\(x,_,_) -> printMean x) ms
   putStrLn " \\\\"
@@ -288,7 +290,7 @@ statsForTableAux f (table:ts) = do
   all' <- mapM (\g -> liftM computeMTTF $ checkTimeoutProperty (g f) table) all
   putStr . texWrap "ii" . capitalize $ showMutantTable table 
   forM_ all' $ \stats -> putStr $ " & " ++ printStat stats
-  putStrLn "\\\\"
+  putStrLn " \\\\"
   liftM (all':) $ statsForTableAux f ts
   {-
     naiveSsniCounters <- checkTimeoutProperty (naiveSsniConfig f) table
