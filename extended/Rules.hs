@@ -113,26 +113,26 @@ parseExpr a = error $ "Unexpected" ++ show a
 
 defaultTable :: RuleTable
 defaultTable = Map.fromList . map parseRule $ [
-  "LAB     ::=  << TRUE , BOT , LabPC >>",
-  "MLAB    ::=  << TRUE , Lab1 , LabPC >>",
-  "PCLAB   ::=  << TRUE , BOT , LabPC >>",
+  "PUT     ::=  << TRUE , BOT , LabPC >>",
+  "MOV     ::=  << TRUE , Lab1 , LabPC >>",
+  "LOAD    ::=  << TRUE , Lab3 , JOIN LabPC ( JOIN Lab1 Lab2 ) >>",
+  "STORE   ::=  << LE ( JOIN Lab1 LabPC ) Lab2 , Lab3 , LabPC >>",
+  "BINOP   ::=  << TRUE , JOIN Lab1 Lab2 , LabPC >>",
+  "NOOP    ::=  << TRUE , __ , LabPC >>",
+  "JUMP    ::=  << TRUE , __ , JOIN LabPC Lab1 >>",
+  "BNZ     ::=  << TRUE , __ , JOIN Lab1 LabPC >>",
   "BCALL   ::=  << TRUE , JOIN Lab2 LabPC , JOIN Lab1 LabPC >>",
   "BRET    ::=  << LE ( JOIN Lab1 LabPC ) ( JOIN Lab2 Lab3 ) , Lab2 , Lab3 >>",
   "PUTLAB  ::=  << TRUE , BOT , LabPC >>",
-  "NOOP    ::=  << TRUE , __ , LabPC >>",
-  "PUT     ::=  << TRUE , BOT , LabPC >>",
-  "BINOP   ::=  << TRUE , JOIN Lab1 Lab2 , LabPC >>",
-  "JUMP    ::=  << TRUE , __ , JOIN LabPC Lab1 >>",
-  "BNZ     ::=  << TRUE , __ , JOIN Lab1 LabPC >>",
-  "LOAD    ::=  << TRUE , Lab3 , JOIN LabPC ( JOIN Lab1 Lab2 ) >>",
-  "STORE   ::=  << LE ( JOIN Lab1 LabPC ) Lab2 , Lab3 , LabPC >>",
+  "LAB     ::=  << TRUE , BOT , LabPC >>",
+  "PCLAB   ::=  << TRUE , BOT , LabPC >>",
+  "ALLOC   ::=  << TRUE , JOIN Lab1 Lab2 , LabPC >>",
   "WRITE   ::=  << LE ( JOIN ( JOIN LabPC Lab1 ) Lab3 ) ( JOIN Lab2 Lab4 ) , Lab4 , LabPC >>",
 -- I think I can get this with more complex encoding
-  "UPDATE  ::=  << AND ( LE Lab3 ( JOIN Lab4 Lab2 ) ) ( LE ( JOIN ( JOIN LabPC Lab5 ) Lab1 ) Lab2 ) , Lab4 , LabPC >>",
+  "UPGRADE  ::=  << AND ( LE Lab3 ( JOIN Lab4 Lab2 ) ) ( LE ( JOIN ( JOIN LabPC Lab5 ) Lab1 ) Lab2 ) , Lab4 , LabPC >>",
 -- Simpler encoding gives us this already
---  "UPDATE  ::=  << AND ( LE ( JOIN Lab3 ( JOIN Lab1 Lab2 ) ) ( JOIN Lab4 ( JOIN LabPC Lab5 ) ) ) ( LE ( JOIN ( JOIN LabPC Lab5 ) Lab1 ) Lab2 ) , Lab4 , LabPC >>",
-  "ALLOC   ::=  << TRUE , JOIN Lab1 Lab2 , LabPC >>",
+--  "UPGRADE  ::=  << AND ( LE ( JOIN Lab3 ( JOIN Lab1 Lab2 ) ) ( JOIN Lab4 ( JOIN LabPC Lab5 ) ) ) ( LE ( JOIN ( JOIN LabPC Lab5 ) Lab1 ) Lab2 ) , Lab4 , LabPC >>",
   "PSETOFF ::=  << TRUE , JOIN Lab1 Lab2 , LabPC >>",
   "PGETOFF ::=  << TRUE , Lab1 , LabPC >>",
   "MSIZE   ::=  << TRUE , Lab2 , JOIN LabPC Lab1 >>",
-  "MOV     ::=  << TRUE , Lab1 , LabPC >>"]
+  "MLAB    ::=  << TRUE , Lab1 , LabPC >>"]

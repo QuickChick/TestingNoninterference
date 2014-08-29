@@ -111,12 +111,12 @@ exec' t s@State{..} instruction = do
       let pc'    = PAtm (addrPc + 1) rlpc
       mem' <- store mem p (Atom v rlab)
       return s{mem = mem', pc = pc'}
-    Update r1 r2 -> do
+    Upgrade r1 r2 -> do
       Atom (VPtr p) lp <- readR r1 regs
       Atom (VLab l) ll <- readR r2 regs
       Atom v lv <- load mem p
       lf <- mlab mem p
-      (Just rlab, rlpc) <- runTMU t UPDATE [lp,lf,lv,l,ll] lpc
+      (Just rlab, rlpc) <- runTMU t UPGRADE [lp,lf,lv,l,ll] lpc
       let pc'    = PAtm (addrPc + 1) rlpc
       mem' <- store mem p (Atom v rlab)
       return s{mem = mem', pc = pc'}

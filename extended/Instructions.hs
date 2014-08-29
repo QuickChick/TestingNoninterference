@@ -50,7 +50,7 @@ data Instr = Lab     RegPtr RegPtr
            | Load    RegPtr RegPtr
            | Store   RegPtr RegPtr
            | Write   RegPtr RegPtr
-           | Update  RegPtr RegPtr
+           | Upgrade  RegPtr RegPtr
            | Alloc   RegPtr RegPtr RegPtr
            | PSetOff RegPtr RegPtr RegPtr
            | Halt    
@@ -59,51 +59,51 @@ data Instr = Lab     RegPtr RegPtr
            | Mov     RegPtr RegPtr
              deriving (Show, Eq, Read)
 
-data InstrKind = LAB
-               | MLAB
-               | PCLAB
-               | BCALL
-               | BRET           
-               | PUTLAB
-               | NOOP           
-               | PUT
-               | BINOP
-               | JUMP
-               | BNZ
+data InstrKind = PUT
+               | MOV
                | LOAD
                | STORE
-               | WRITE
-               | UPDATE
-               | ALLOC
-               | PSETOFF
+               | BINOP
+               | NOOP           
                | HALT
+               | JUMP
+               | BNZ
+               | BCALL
+               | BRET           
+               | PUTLAB    
+               | LAB
+               | PCLAB
+               | ALLOC
+               | WRITE
+               | UPGRADE
                | PGETOFF
-               | MSIZE
-               | MOV
+               | PSETOFF
+               | MSIZE                 
+               | MLAB
              deriving (Show, Eq, Read, Ord)
 
 allInstrKind :: [InstrKind]
-allInstrKind = [ LAB
-               , MLAB
-               , PCLAB
+allInstrKind = [ PUT
+               , MOV
+               , LOAD
+               , STORE
+               , BINOP
+               , NOOP           
+               , HALT
+               , JUMP
+               , BNZ
                , BCALL
                , BRET           
                , PUTLAB
-               , NOOP           
-               , PUT
-               , BINOP
-               , JUMP
-               , BNZ
-               , LOAD
-               , STORE
-               , WRITE
-               , UPDATE
+               , LAB
+               , PCLAB
                , ALLOC
-               , PSETOFF
-               , HALT
+               , WRITE
+               , UPGRADE
                , PGETOFF
+               , PSETOFF
                , MSIZE 
-               , MOV ]
+               , MLAB ]
 
 opcodeOfInstr :: Instr -> Maybe InstrKind
 opcodeOfInstr (Lab _ _      ) = Just LAB
@@ -120,7 +120,7 @@ opcodeOfInstr (Bnz _ _      ) = Just BNZ
 opcodeOfInstr (Load _ _     ) = Just LOAD
 opcodeOfInstr (Store _ _    ) = Just STORE
 opcodeOfInstr (Write _ _    ) = Just WRITE
-opcodeOfInstr (Update _ _    ) = Just UPDATE
+opcodeOfInstr (Upgrade _ _  ) = Just UPGRADE
 opcodeOfInstr (Alloc _ _ _  ) = Just ALLOC
 opcodeOfInstr (PSetOff _ _ _) = Just PSETOFF
 opcodeOfInstr (PGetOff _ _  ) = Just PGETOFF

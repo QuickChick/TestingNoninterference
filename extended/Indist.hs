@@ -30,11 +30,8 @@ instance Indist Int where
 -- * Ignores the label
 -- * For pointers, it is syntactic equality because of the per-level allocator
 instance Indist Value where
-    indist _ (VInt x) (VInt y) = x == y
-    indist _ (VLab x) (VLab y) = x == y
-    indist _ (VPtr x) (VPtr y) = x == y
-    indist _ _ _ = False
-              
+    indist = const (==)
+
 -- Atom indistinguishability
 -- * Equal Labels (public labels)
 -- ** Low Labels  -> Indist Values
