@@ -27,6 +27,7 @@ import Data.IORef
 
 import System.Console.CmdArgs
 
+import Data.Char
 import Data.List
 import Data.Maybe
 
@@ -81,7 +82,7 @@ quickCheckN n = quickCheckWith stdArgs{maxSuccess = n}
 
 checkProperty :: Flags -> IORef Int -> RuleTable -> Integer -> IO (Either Int Result,Integer)
 -- Returns used time in microseconds and either number of tests run (until timeout) or a result
-checkProperty flags discardRef table microsecs = traceShow "Here????" $ do
+checkProperty flags discardRef table microsecs = do
     let prop = mkProperty flags table 
         isChatty = isVerbose flags
         isLatex  = printLatex   flags
@@ -232,43 +233,61 @@ computeMTTF cs =
   else Just $ sum (map fromIntegral $ times_c cs) 
            / (fromIntegral (bugs_c cs) * 1000)
 
-printMR :: Maybe Rational -> String
-printMR Nothing = "----"
-printMR (Just x) = printf "%0.2f" (fromRational x :: Double)
+texWrap :: String -> String -> String
+texWrap cmd str = "\\" ++ cmd ++ "{" ++ str ++ "}"
 
-printMD :: Maybe Double -> String
-printMD Nothing = "----"
-printMD (Just x) = printf "%0.2f" x 
+printStat :: Maybe Rational -> String
+printStat Nothing  = "\\GTNone"
+printStat (Just x) = printf "%0.2f" (fromRational x :: Double)
+
+printMean :: Maybe Double -> String
+printMean Nothing  = "\\GTMeanNone"
+printMean (Just x) = texWrap "GTMean" $ printf "%0.2f" x 
 
 statsForTable :: Flags -> IO ()
 statsForTable flags = do
-    putStrLn "\\begin{tabular}{ c c c c c c c c c}"
-    putStrLn "INSTR & SSNI (naive) & SSNI & EENI & LLNI (unopt) & LLNI (naive) & LLNI & MSNI (naive) & MSNI \\\\ "
-    times <- liftM transpose $ statsForTableAux flags $ mutateTable defaultTable
-    let ms = map means times
-    putStr " AM & " 
-    putStr $ concat $ intersperse " & " $ map (\(x,_,_) -> printMD x) ms
-    putStrLn " \\\\"
-    putStr " GM & " 
-    putStr $ concat $ intersperse " & " $ map (\(_,x,_) -> printMD x) ms
-    putStrLn " \\\\"
-    putStrLn "\\end{tabular}"
-    
+  putStrLn "\\begin{tabular}{@{}l*7{mr}@{}}"
+  putStrLn "\\toprule"
+  putStrLn $  "MTTF & "
+           ++ intercalate " & " (map (texWrap "GTHeader")
+                                     [ "EENI"
+                                     , "LLNI (basic)"
+                                     , "LLNI"
+                                     , "SSNI (naive)"
+                                     , "SSNI"
+                                     , "MSNI (naive)"
+                                     , "MSNI" ])
+  putStrLn "\\midrule"
+  times <- liftM transpose . statsForTableAux flags $ mutateTable defaultTable
+  let ms = map means times
+  putStr "\\GTMeanHeader{Arithmetic mean} & "
+  putStr $ concat $ intersperse " & " $ map (\(x,_,_) -> printMean x) ms
+  putStrLn " \\\\"
+  putStr "\\GTMeanHeader{Geometric mean} & "
+  putStr $ concat $ intersperse " & " $ map (\(_,x,_) -> printMean x) ms
+  putStrLn " \\\\"
+  putStrLn "\\bottomrule"
+  putStrLn "\\end{tabular}"
+
+-- English only
+capitalize :: String -> String
+capitalize ""     = ""
+capitalize (c:cs) = toUpper c : map toLower cs
 
 statsForTableAux :: Flags -> [RuleTable] -> IO [[Maybe Rational]]
 statsForTableAux f [] = return []
 statsForTableAux f (table:ts) = do
-  let all = [ naiveSsniConfig 
-            , ssniConfig 
-            , eeniConfig
+  let all = [ eeniConfig
             , naiveLLNIListConfig 
-            , naiveLlniConfig
+              -- , naiveLlniConfig
             , llniConfig
+            , naiveSsniConfig 
+            , ssniConfig 
             , naiveMsniConfig 
             , msniConfig ] 
   all' <- mapM (\g -> liftM computeMTTF $ checkTimeoutProperty (g f) table) all
-  putStr $ showMutantTable table 
-  forM_ all' $ \stats -> putStr $ " & " ++ printMR stats
+  putStr . texWrap "ii" . capitalize $ showMutantTable table 
+  forM_ all' $ \stats -> putStr $ " & " ++ printStat stats
   putStrLn "\\\\"
   liftM (all':) $ statsForTableAux f ts
   {-
