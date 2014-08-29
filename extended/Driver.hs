@@ -288,7 +288,7 @@ statsForTableAux f (table:ts) = do
             , naiveMsniConfig 
             , msniConfig ] 
   all' <- mapM (\g -> liftM computeMTTF $ checkTimeoutProperty (g f) table) all
-  putStr . texWrap "ii" . capitalize $ showMutantTable table 
+  putStr $ texWrap ("Op" ++ showMutantTable table) ""
   forM_ all' $ \stats -> putStr $ " & " ++ printStat stats
   putStrLn " \\\\"
   liftM (all':) $ statsForTableAux f ts
