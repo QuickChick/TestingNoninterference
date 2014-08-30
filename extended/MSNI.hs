@@ -50,11 +50,10 @@ msniAux :: (MemC m Atom, IMemC i, Indist m, Indist i) =>
            (State i m) -> (State i m) -> [(State i m)] -> [(State i m)] -> Bool
 msniAux f _ _ _ [] [] = True
 msniAux f obs st1 st2 [] (st2':sts2)
-    | isLowState obs st2 || isLowState obs st2' = True -- Termination insensitive
-    | otherwise = 
-      indist obs st2 st2' && msniAux f obs st1 st2' [] sts2
+    | isLowState obs st2 || isLowState obs st2' = msniAux f obs st1 st2' [] sts2
+    | otherwise     = indist obs st2 st2' && msniAux f obs st1 st2' [] sts2
 msniAux f obs st1 st2 (st1':sts1) []
-    | isLowState obs st1 || isLowState obs st1' = True -- Termination insensitive
+    | isLowState obs st1 || isLowState obs st1' = msniAux f obs st1' st2 sts1 []
     | otherwise     = indist obs st1 st1' && msniAux f obs st1' st2 sts1 []
 msniAux f obs st1 st2 (st1':sts1) (st2':sts2) 
     | isHighState obs st1 && isHighState obs st1' =
