@@ -74,8 +74,10 @@ mkProperty f@Flags{..} t =
               propMSNI f t v .&&. propPreservesWellFormed noSteps t st
       TestEENI -> 
           forAllShrink (genVariationState f) shrinkF $ \v@(Var _ st _) ->
-              propEENI f t v .&&. propPreservesWellFormed noSteps t st
-
+              propEENI f t v 
+      TestEENI_Weak -> 
+          forAllShrink (genEmptyState f) shrinkF $ \v@(Var _ st _) ->
+              propEENI f t v 
 
 quickCheckN :: Int -> Property -> IO ()
 quickCheckN n = quickCheckWith stdArgs{maxSuccess = n}
@@ -246,11 +248,12 @@ printMean (Just x) = texWrap "GTMean" $ printf "%0.2f" x
 
 statsForTable :: Flags -> IO ()
 statsForTable flags = do
-  putStrLn "\\begin{tabular}{@{}l*7{mr}@{}}"
+  putStrLn "\\begin{tabular}{@{}l*8{mr}@{}}"
   putStrLn "\\toprule"
   putStrLn $  "MTTF & "
            ++ intercalate " & " (map (texWrap "GTHeader")
-                                     [ "EENI"
+                                     [ "EENI (weak)"
+                                     , "EENI"
                                      , "LLNI (basic)"
                                      , "LLNI"
                                      , "SSNI (naive)"
@@ -279,7 +282,8 @@ capitalize (c:cs) = toUpper c : map toLower cs
 statsForTableAux :: Flags -> [RuleTable] -> IO [[Maybe Rational]]
 statsForTableAux f [] = return []
 statsForTableAux f (table:ts) = do
-  let all = [ eeniConfig
+  let all = [ eeniWeakConfig 
+            , eeniConfig
             , naiveLLNIListConfig 
               -- , naiveLlniConfig
             , llniConfig
@@ -324,14 +328,14 @@ testSingle :: Flags -> IO ()
 testSingle f@Flags{..} =
   let table = case mutantNo of
                 Nothing -> defaultTable
-                Just n  -> mutateTable defaultTable !! n in 
-  do
-  res <- quickCheckWithResult
+                Just n  -> mutateTable defaultTable !! n 
+      prop = mkProperty f table in do
+  prop `seq` quickCheckWith
            stdArgs { maxSuccess      = maxTests     
                    , maxDiscardRatio = discardRatio 
                    , chatty          = isVerbose && not printLatex }
            $ mkProperty f table
-  putStrLn $ show res
+  --putStrLn $ show res
 
 main :: IO ()
 main = do

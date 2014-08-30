@@ -41,7 +41,6 @@ propSSNI f t (Var obs st1 st2) =
                 case exec t st2 of 
                   Just st2' ->
                       property $ 
---                      collect "LOW -> LOW" $ 
 
                       -- Both took a low step
 {-                        whenFail (putStrLn $ PP.render 
@@ -52,7 +51,7 @@ propSSNI f t (Var obs st1 st2) =
                       indist obs st1' st2'
                   Nothing -> 
                       -- 1 took a low step and 2 failed
-                      {- collect "LOW ->*, 2 X" $ -} property rejected
+                      property rejected
             else -- st1 is High
                 if isLowState st1' then
                     case exec t st2 of 
@@ -65,11 +64,10 @@ propSSNI f t (Var obs st1 st2) =
                                    text "Ending State:\n" $$ 
                                    pp (Var obs st1' st2')) $ 
 -}
---                              collect "High -> Low" $ 
                               property $
                               indist obs st1' st2'
                           else -- 1 High -> Low, 2 -> High -> High. Check 2
-                              property $ --collect "High -> High" $ 
+                              property $ 
                               indist obs st2 st2'
                       Nothing ->
                           -- 1 High -> Low, two failed. Reject
@@ -80,7 +78,7 @@ propSSNI f t (Var obs st1 st2) =
                                 pp (Var obs st1 st1') $$ 
                                 (text . show $ indist obs st1 st1')
                              ) $ -}
-                    property $ --collect "High -> High" $ 
+                    property $ 
                     indist obs st1 st1'
         Nothing -> property rejected -- 1 Failed
   else -- not indistinguishable!

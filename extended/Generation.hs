@@ -69,10 +69,10 @@ instance SmartGen Int where
 
 instance SmartGen Value where
     smartGen info@(MkInfo _ cl dfs _) = 
-        frequency [--(1, liftM VInt $ smartGen info)
-                   (1, liftM VInt $ choose (0, cl - 1))
-                  ,(1, liftM VPtr $ smartGen info)
-                  ,(1, liftM VLab $ smartGen info)]
+        frequency $ [--(1, liftM VInt $ smartGen info)
+                     (1, liftM VInt $ choose (0, cl - 1))
+                    ,(1, liftM VLab $ smartGen info)]
+                    ++ [(1, liftM VPtr $ smartGen info) | not $ null dfs ]
 
 instance SmartGen Atom where
     smartGen info = liftM2 Atom (smartGen info) (smartGen info)
@@ -383,6 +383,23 @@ instantiateStamps = return
 
 --defaultFlags :: Flags 
 --defaultFlags = Flags.defaultFlags
+
+genEmptyState :: (MemC m Atom, IMemC i, SmartVary m, Show i, Show m) => 
+                     Flags -> Gen (Variation (State i m))
+genEmptyState flags = do 
+  let Parameters{..} = getParameters flags
+      (mem, dfs) = (Memory.empty, [])
+  codeSize <- choose (minCodeSize, maxCodeSize)
+  let imem  = fromInstrList $ replicate codeSize Noop
+      info  = MkInfo flags codeSize dfs noRegisters
+      pc    = PAtm 0 L
+      stack = Stack []
+  regs <- smartGen info
+  let state0 = State{..}
+  st <- popInstr flags state0                    
+  obs <- genLabelBetweenLax L H -- in case we change to arbitrary number
+  st' <- smartVary obs info st
+  return $ Var obs st st'
 
 genVariationState :: (MemC m Atom, IMemC i, SmartVary m, Show i, Show m) => 
                      Flags -> Gen (Variation (State i m))

@@ -34,5 +34,10 @@ propEENI Flags{..} t (Var obs st1 st2) =
         isLowState st = isLow (pcLab $ pc st) obs
         isHalted st = instrLookup (imem st) (pc st) == Just Halt
     in isLowState st1' && isLowState st2' && isHalted st1' && isHalted st2' 
-       ==> indist obs st1' st2'
-
+       ==> 
+       case testProp of 
+         TestEENI -> indist obs st1' st2'
+         TestEENI_Weak -> 
+             let p (Atom (VInt _) l) = l `flowsTo` obs 
+                 p _ = False
+             in filter p (unRegSet $ regs st1') == filter p (unRegSet $ regs st2')

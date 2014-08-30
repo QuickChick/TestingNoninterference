@@ -17,6 +17,7 @@ data TestProperty = TestLLNI
                   | TestSSNI
                   | TestMSNI
                   | TestEENI
+                  | TestEENI_Weak
             deriving (Eq, Show, Read, Typeable, Data)
 
 data QCMode = ModeQuickCheck
@@ -27,20 +28,20 @@ data CollectF = CollectInstrCode
               | CollectNothing
             deriving (Eq, Show, Read, Typeable, Data)
 
-data Flags = Flags { mode :: QCMode
-                   , strategy :: GenType 
-                   , genInstrDist :: GenInstrType
-                   , memType :: MemType
-                   , testProp :: TestProperty
-                   , noSteps  :: Int
-                   , maxTests :: Int
-                   , mutantNo :: Maybe Int
-                   , discardRatio :: Int
-                   , isVerbose :: Bool
-                   , printLatex   :: Bool
-                   , timeout      :: Int 
-                   , doShrink     :: Bool 
-                   , collectF     :: CollectF }
+data Flags = Flags { mode         :: !QCMode
+                   , strategy     :: !GenType 
+                   , genInstrDist :: !GenInstrType
+                   , memType      :: !MemType
+                   , testProp     :: !TestProperty
+                   , noSteps      :: !Int
+                   , maxTests     :: !Int
+                   , mutantNo     :: !(Maybe Int)
+                   , discardRatio :: !Int
+                   , isVerbose    :: !Bool
+                   , printLatex   :: !Bool
+                   , timeout      :: !Int 
+                   , doShrink     :: !Bool 
+                   , collectF     :: !CollectF }
            deriving (Eq, Show, Read, Typeable, Data)
 
 defaultFlags :: Flags
@@ -78,7 +79,8 @@ msniConfig f = (llniConfig f) { genInstrDist = DiscardUniform, testProp = TestMS
 naiveMsniConfig :: Flags -> Flags 
 naiveMsniConfig f = (msniConfig f) { genInstrDist = Naive }
 eeniConfig :: Flags -> Flags
-eeniConfig f = (llniConfig f) { genInstrDist = DiscardUniform, testProp = TestEENI }
-
+eeniConfig f = (llniConfig f) { genInstrDist = Naive, testProp = TestEENI }
+eeniWeakConfig :: Flags -> Flags
+eeniWeakConfig f = (eeniConfig f) { testProp = TestEENI_Weak }
 
 
