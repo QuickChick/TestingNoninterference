@@ -100,18 +100,21 @@ cropTop obs s@(Stack (StkElt (pc, _, _ ,_):s')) =
 
 -- Indistinghuishability of *LOW-PC* Stack Elements
 instance Indist StkElt where
-    indist obs (StkElt (pc1, l1, rs1, r1)) (StkElt (pc2, l2, rs2, r2)) =
-        if isLow (pcLab pc1) obs then 
+    indist obs s1@(StkElt (pc1, l1, rs1, r1)) s2@(StkElt (pc2, l2, rs2, r2)) =
+        debug (show ("When comparing", s1, s2)) $ 
+        if isLow (pcLab pc1) obs || isLow (pcLab pc2) obs then 
             indist obs pc1 pc2  -- CH: just equality, why not call that?
             && indist obs l1 l2 -- CH: just equality, why not call that?
             && indist obs rs1 rs2
             && indist obs r1 r2 -- CH: just equality, why not call that?
         else not (isLow (pcLab pc2) obs) 
 
-instance Indist Stack where
-    indist obs s1 s2 = 
-        indist obs (unStack $ cropTop obs s1) (unStack $ cropTop obs s2)
-
+indistStack :: PtrAtom -> PtrAtom -> Label -> Stack -> Stack -> Bool
+indistStack (PAtm _ pcl1) (PAtm _ pcl2) obs s1 s2 = 
+    let s1' = (unStack $ (if isHigh pcl1 obs then cropTop obs s1 else s1))
+        s2' = (unStack $ (if isHigh pcl2 obs then cropTop obs s2 else s2))
+    in debug (show $ ("Cropped", s1', s2')) $ indist obs s1' s2'
+           
 -- State indistinguishability
 -- * If both pc's are high, memories and stacks must be indistinguishable
 --   ++ Could be weakened with reachability
@@ -125,7 +128,7 @@ instance (IMemC i, MemC m Atom, Indist m, Indist i) =>Indist (State i m) where
     indist obs (State imem1 mem1 s1 regs1 pc1) (State imem2 mem2 s2 regs2 pc2) =
         debug "IMemory" (indist obs imem1 imem2)
         && debug "Memory" (indist obs mem1 mem2)
-        && debug "Stack" (indist obs s1 s2)
+        && debug "Stack" (indistStack pc1 pc2 obs s1 s2)
         && if isLow (pcLab pc1) obs || isLow (pcLab pc2) obs then
                indist obs pc1 pc2
                && debug "Registers" (indist obs regs1 regs2 )
