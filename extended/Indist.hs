@@ -93,22 +93,24 @@ filterStack :: Label -> Stack -> Stack
 filterStack obs (Stack s) = Stack $ filter (isLowStkElt obs) s
 
 -- CH: unused
--- cropTop :: Label -> Stack -> Stack
--- cropTop _ (Stack []) = Stack []
--- cropTop obs s@(Stack (StkElt (pc, _, _ ,_):s')) =
---     if isLow (pcLab pc) obs then s else cropTop obs $ Stack s'
+cropTop :: Label -> Stack -> Stack
+cropTop _ (Stack []) = Stack []
+cropTop obs s@(Stack (StkElt (pc, _, _ ,_):s')) =
+    if isLow (pcLab pc) obs then s else cropTop obs $ Stack s'
 
 -- Indistinghuishability of *LOW-PC* Stack Elements
 instance Indist StkElt where
     indist obs (StkElt (pc1, l1, rs1, r1)) (StkElt (pc2, l2, rs2, r2)) =
-        indist obs pc1 pc2  -- CH: just equality, why not call that?
-        && indist obs l1 l2 -- CH: just equality, why not call that?
-        && indist obs rs1 rs2
-        && indist obs r1 r2 -- CH: just equality, why not call that?
+        if isLow (pcLab pc1) obs then 
+            indist obs pc1 pc2  -- CH: just equality, why not call that?
+            && indist obs l1 l2 -- CH: just equality, why not call that?
+            && indist obs rs1 rs2
+            && indist obs r1 r2 -- CH: just equality, why not call that?
+        else not (isLow (pcLab pc2) obs) 
 
 instance Indist Stack where
     indist obs s1 s2 = 
-        indist obs (unStack $ filterStack obs s1) (unStack $ filterStack obs s2)
+        indist obs (unStack $ cropTop obs s1) (unStack $ cropTop obs s2)
 
 -- State indistinguishability
 -- * If both pc's are high, memories and stacks must be indistinguishable
