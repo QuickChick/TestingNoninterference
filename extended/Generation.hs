@@ -142,7 +142,7 @@ ainstr f hltWeight st@State{..} =
                                  (unRegSet regs) [] [] [] [] 0
         genRegPtr = choose (0, length (unRegSet regs) - 1)
         ifNaive x y = if genInstrDist f == Naive then y else x
-        hltW = if testProp f == TestEENI then hltWeight else 0
+        hltW = if testProp f == TestEENI || testProp f == TestEENI_Weak then hltWeight else 0
     in frequency $ 
            [(5, pure Noop)
            ,(hltW, pure Halt)
@@ -399,6 +399,7 @@ genEmptyState flags = do
   st <- popInstr flags state0                    
   obs <- genLabelBetweenLax L H -- in case we change to arbitrary number
   st' <- smartVary obs info st
+         {- traceShow (Var obs st st') $ -} 
   return $ Var obs st st'
 
 genVariationState :: (MemC m Atom, IMemC i, SmartVary m, Show i, Show m) => 
