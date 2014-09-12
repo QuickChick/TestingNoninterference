@@ -20,8 +20,9 @@ Code for Testing Noninterference
 Makefile
 Makefile.common
 
-basic/    -- Basic IFC machine 
-	Machine.hs     : definition of the abstract machine
+basic/    -- Simple information-flow stack machine
+
+        Machine.hs     : definition of the abstract machine
 	Generation.hs  : random program generation
 	Driver.hs      : experiment set up, top level properties, main
 	Flags.hs       : various flags configuration of a machine
@@ -31,7 +32,7 @@ basic/    -- Basic IFC machine
 	ObservableInst.hs : observable classes and shrinking variations
         ...
 
-extended/ -- Extended IFC machine
+extended/ -- Information-flow register machine with advanced features
         ...
 
 common/ -- Common definitions, and helpers
@@ -39,7 +40,7 @@ common/ -- Common definitions, and helpers
 	Machine.hs              : common definitions for generic "machines"
 	Pretty.hs               : pretty printing
 	Trace.hs                : execution traces
-	Util.hs                 : misc. helpers 
+	Util.hs                 : misc. helpers
         ...
 
 ### Building
@@ -63,13 +64,13 @@ should usually solve the problem.
 
 -= Running the test driver from command line =-
 
-You may run the test driver from the command line with: 
+You may run the test driver from the command line with:
     ./Driver
 This will run with the default configuration, shown in Flags.hs
 However you may override one of the options manually as well -- for
 instance:
    ./Driver --gen-strategy=GenNaive --tests=10000
-or 
+or
    ./Driver --gen-strategy=GenByExec --tests=30000
 
 All values (and names for named options) are specified in Flags.hs. Finally,
@@ -79,16 +80,16 @@ to see a list of available options.
 
 -= Basic profiling of test generation =-
 
-TMUDriver contains flags that can profile tests for some 
-basic statistics. Namely, the 
+TMUDriver contains flags that can profile tests for some
+basic statistics. Namely, the
 
   --prop-test=PropJustProfileLengths
 and
   --prop-test=PropJustProfileWF
 
-run profiling on tests with the current configuration. The former is 
-profiling execution lenghts, the latter is profiling the reasons for 
-termination. You may use --tests to determine the number of tests, 
+run profiling on tests with the current configuration. The former is
+profiling execution lenghts, the latter is profiling the reasons for
+termination. You may use --tests to determine the number of tests,
 or --gen-strategy to determine under which strategy you want to profile, etc.
 
 -= Bulk testing and profiling =-
@@ -101,16 +102,16 @@ which will iterate over these two buggy behaviors. The --ifc-semantics
 flag stands for a list of behaviours you would like to test. For convenience
 there exists a wildcard value:
    --ifc-semantics="*"
-which you may use to iterate over all bugs. 
+which you may use to iterate over all bugs.
 
-When testing you may want to suppress printing information from the 
+When testing you may want to suppress printing information from the
 actual counterexample, which you can do with:
    --show-counterexamples=False
 
 Here is an example usage:
 
-./Driver --ifc-semantics="*" 
-            --gen-strategy=GenByExec 
+./Driver --ifc-semantics="*"
+            --gen-strategy=GenByExec
             --show-counterexamples=False
 
 Iterates over all bugs using GenByExec, not showing
