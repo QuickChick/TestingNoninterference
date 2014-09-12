@@ -4,9 +4,8 @@ Code for Testing Noninterference
 
 ### Description
 
-- Haskell code associated to the following paper
+- Haskell code associated to the following paper:
   - Catalin Hritcu, Leonidas Lampropoulos, Antal Spector-Zabusky, Arthur Azevedo de Amorim, Maxime Dénès, John Hughes, Benjamin C. Pierce, and Dimitrios Vytiniotis. Testing Noninterference, Quickly. arXiv:1409.0393. Submitted to Special Issue of Journal of Functional Programming for ICFP 2013. September 2014. (http://arxiv.org/abs/1409.0393)
-  - Catalin Hritcu, John Hughes, Benjamin C. Pierce, Antal Spector-Zabusky, Dimitrios Vytiniotis, Arthur Azevedo de Amorim, Leonidas Lampropoulos. Testing Noninterference, Quickly. In 18th ACM SIGPLAN International Conference on Functional Programming (ICFP). pages 455-468, ACM Press. September 2013. (http://prosecco.gforge.inria.fr/personal/hritcu/publications/testing-noninterference-icfp2013.pdf)
 
 ### Prerequisites
 
