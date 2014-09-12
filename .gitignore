@@ -1,3 +1,5 @@
 *.hi
 *.o
 *~
+stack/Driver
+register/Driver
