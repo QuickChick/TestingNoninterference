@@ -11,7 +11,7 @@ Code for Testing Noninterference
 ### Prerequisites
 
 - GHC 7.4.x-7.8.x (known to work with 7.4.1, 7.6.3, and 7.8.3)
-- Haskell packages (available with 'cabal install <package>'):
+- Haskell packages (available with 'cabal install package-name'):
   - QuickCheck 2.7.x (known to work with 2.7.3)
   - CmdArgs >0.9.5
   - concurrent-extra
@@ -31,7 +31,9 @@ On Linux you might have permission problems (you might see "WARNING:
 .ghci is writable by someone else, IGNORING!" when starting ghci), in
 which case you need to make sure that this dir, its subdirs and the
 .ghci files inside are not group readable. A command like
+
     chmod -R g-w .
+
 should usually solve the problem.
 
 ### Contents
@@ -39,7 +41,7 @@ should usually solve the problem.
     Makefile
     Makefile.common
 
-    basic/    -- Simple information-flow stack machine
+    stack/    -- Simple information-flow stack machine
 
         Machine.hs     : definition of the abstract machine
         Generation.hs  : random program generation
@@ -51,7 +53,7 @@ should usually solve the problem.
         ObservableInst.hs : observable classes and shrinking variations
         ...
 
-    extended/ -- Information-flow register machine with advanced features
+    register/ -- Information-flow register machine with advanced features
         ...
 
     common/ -- Common definitions, and helpers
@@ -62,7 +64,7 @@ should usually solve the problem.
         Util.hs                 : misc. helpers
         ...
 
-### Old description (TODO: bring this up to date)
+### Old description for stack machine code (TODO: bring this up to date)
 
 #### Running the test driver from command line
 
@@ -148,8 +150,8 @@ For instance,
 
     Prelude> let j (Just a) = a
     <interactive>:2:5:
-	Warning: Pattern match(es) are non-exhaustive
-		 In an equation for `j': Patterns not matched: Nothing
+      Warning: Pattern match(es) are non-exhaustive
+        In an equation for `j': Patterns not matched: Nothing
 
 At compile-time, these warnings are errors: you're forced to stick to
 these coding standards.
