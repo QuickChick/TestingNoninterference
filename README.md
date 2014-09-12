@@ -15,34 +15,6 @@ Code for Testing Noninterference
   - concurrent-extra
 - UNIX utilities like make, echo, rm, etc.
 
-### Contents
-
-Makefile
-Makefile.common
-
-basic/    -- Simple information-flow stack machine
-
-        Machine.hs     : definition of the abstract machine
-	Generation.hs  : random program generation
-	Driver.hs      : experiment set up, top level properties, main
-	Flags.hs       : various flags configuration of a machine
-	Instr.hs       : ISA
-	Labels.hs      : label systems, and observations
-	Observable.hs  : observable classes
-	ObservableInst.hs : observable classes and shrinking variations
-        ...
-
-extended/ -- Information-flow register machine with advanced features
-        ...
-
-common/ -- Common definitions, and helpers
-	Aggregate.hs
-	Machine.hs              : common definitions for generic "machines"
-	Pretty.hs               : pretty printing
-	Trace.hs                : execution traces
-	Util.hs                 : misc. helpers
-        ...
-
 ### Building
 
 Run "make" in the top directory
@@ -59,6 +31,34 @@ which case you need to make sure that this dir, its subdirs and the
 .ghci files inside are not group readable. A command like
 > chmod -R g-w .
 should usually solve the problem.
+
+### Contents
+
+    Makefile
+    Makefile.common
+
+    basic/    -- Simple information-flow stack machine
+
+        Machine.hs     : definition of the abstract machine
+        Generation.hs  : random program generation
+        Driver.hs      : experiment set up, top level properties, main
+        Flags.hs       : various flags configuration of a machine
+        Instr.hs       : instruction set architecture
+        Labels.hs      : label models and observations
+        Observable.hs  : observable classes
+        ObservableInst.hs : observable classes and shrinking variations
+        ...
+
+    extended/ -- Information-flow register machine with advanced features
+        ...
+
+    common/ -- Common definitions, and helpers
+        Aggregate.hs
+        Machine.hs              : common definitions for generic "machines"
+        Pretty.hs               : pretty printing
+        Trace.hs                : execution traces
+        Util.hs                 : misc. helpers
+        ...
 
 ### Old description (TODO: bring this up to date)
 
