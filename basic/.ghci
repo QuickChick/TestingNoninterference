@@ -1,3 +1,0 @@
-:def source readFile
-:source ../dot-ghci-common.ghci
-:setup-flags ..

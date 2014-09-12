@@ -1,0 +1,25 @@
+# THIS FILE HAS BEEN AUTOMATICALLY GENERATED!
+# EDIT IT AT YOUR OWN RISK
+all-picotables: picotable-Basic-EENI-Mem-Initial-Weighted-False picotable-Basic-EENI-Mem-Initial-Sequence-False picotable-Basic-EENI-Mem-Initial-Sequence-True picotable-Basic-EENI-Mem-Initial-Naive-False picotable-Basic-EENI-Mem-Initial-ByExec-True picotable-Cally-EENI-Mem-Initial-ByExec2-True picotable-Cally-EENI-Low-Initial-ByExec2-True picotable-Cally-EENI-Low-QuasiInitial-ByExec2-True picotable-Cally-LLNI-Low-QuasiInitial-ByExec2-True picotable-Cally-SSNI-Full-Arbitrary-Naive-True picotable-Cally-SSNI-Full-Arbitrary-TinySSNI-True
+picotable-Basic-EENI-Mem-Initial-Weighted-False:
+	$(MAKE) picotable INSTRS=Basic BUGS='[IfcBugArithNoTaint,IfcBugPushNoTaint,IfcBugLoadNoTaint,IfcBugStoreNoPointerTaint,IfcBugAllowWriteDownThroughHighPtr,IfcBugStoreNoValueTaint]' PROP=EENI EQUIV=Mem STRATEGY=Weighted START=Initial SMART_INTS=False
+picotable-Basic-EENI-Mem-Initial-Sequence-False:
+	$(MAKE) picotable INSTRS=Basic BUGS='[IfcBugArithNoTaint,IfcBugPushNoTaint,IfcBugLoadNoTaint,IfcBugStoreNoPointerTaint,IfcBugAllowWriteDownThroughHighPtr,IfcBugStoreNoValueTaint]' PROP=EENI EQUIV=Mem STRATEGY=Sequence START=Initial SMART_INTS=False
+picotable-Basic-EENI-Mem-Initial-Sequence-True:
+	$(MAKE) picotable INSTRS=Basic BUGS='[IfcBugArithNoTaint,IfcBugPushNoTaint,IfcBugLoadNoTaint,IfcBugStoreNoPointerTaint,IfcBugAllowWriteDownThroughHighPtr,IfcBugStoreNoValueTaint]' PROP=EENI EQUIV=Mem STRATEGY=Sequence START=Initial SMART_INTS=True
+picotable-Basic-EENI-Mem-Initial-Naive-False:
+	$(MAKE) picotable INSTRS=Basic BUGS='[IfcBugArithNoTaint,IfcBugPushNoTaint,IfcBugLoadNoTaint,IfcBugStoreNoPointerTaint,IfcBugAllowWriteDownThroughHighPtr,IfcBugStoreNoValueTaint]' PROP=EENI EQUIV=Mem STRATEGY=Naive START=Initial SMART_INTS=False
+picotable-Basic-EENI-Mem-Initial-ByExec-True:
+	$(MAKE) picotable INSTRS=Basic BUGS='[IfcBugArithNoTaint,IfcBugPushNoTaint,IfcBugLoadNoTaint,IfcBugStoreNoPointerTaint,IfcBugAllowWriteDownThroughHighPtr,IfcBugStoreNoValueTaint]' PROP=EENI EQUIV=Mem STRATEGY=ByExec START=Initial SMART_INTS=True
+picotable-Cally-EENI-Mem-Initial-ByExec2-True:
+	$(MAKE) picotable INSTRS=Cally BUGS='[IfcBugArithNoTaint,IfcBugPushNoTaint,IfcBugLoadNoTaint,IfcBugStoreNoPointerTaint,IfcBugAllowWriteDownThroughHighPtr,IfcBugStoreNoValueTaint,IfcBugJumpNoRaisePc,IfcBugJumpLowerPc,IfcBugStoreNoPcTaint,IfcBugAllowWriteDownWithHighPc,IfcBugCallNoRaisePc,IfcBugReturnNoTaint,IfcBugValueOrVoidOnReturn,IfcBugPopPopsReturns]' PROP=EENI EQUIV=Mem STRATEGY=ByExec2 START=Initial SMART_INTS=True
+picotable-Cally-EENI-Low-Initial-ByExec2-True:
+	$(MAKE) picotable INSTRS=Cally BUGS='[IfcBugArithNoTaint,IfcBugPushNoTaint,IfcBugLoadNoTaint,IfcBugStoreNoPointerTaint,IfcBugAllowWriteDownThroughHighPtr,IfcBugStoreNoValueTaint,IfcBugJumpNoRaisePc,IfcBugJumpLowerPc,IfcBugStoreNoPcTaint,IfcBugAllowWriteDownWithHighPc,IfcBugCallNoRaisePc,IfcBugReturnNoTaint,IfcBugValueOrVoidOnReturn,IfcBugPopPopsReturns]' PROP=EENI EQUIV=Low STRATEGY=ByExec2 START=Initial SMART_INTS=True
+picotable-Cally-EENI-Low-QuasiInitial-ByExec2-True:
+	$(MAKE) picotable INSTRS=Cally BUGS='[IfcBugArithNoTaint,IfcBugPushNoTaint,IfcBugLoadNoTaint,IfcBugStoreNoPointerTaint,IfcBugAllowWriteDownThroughHighPtr,IfcBugStoreNoValueTaint,IfcBugJumpNoRaisePc,IfcBugJumpLowerPc,IfcBugStoreNoPcTaint,IfcBugAllowWriteDownWithHighPc,IfcBugCallNoRaisePc,IfcBugReturnNoTaint,IfcBugValueOrVoidOnReturn,IfcBugPopPopsReturns]' PROP=EENI EQUIV=Low STRATEGY=ByExec2 START=QuasiInitial SMART_INTS=True
+picotable-Cally-LLNI-Low-QuasiInitial-ByExec2-True:
+	$(MAKE) picotable INSTRS=Cally BUGS='[IfcBugArithNoTaint,IfcBugPushNoTaint,IfcBugLoadNoTaint,IfcBugStoreNoPointerTaint,IfcBugAllowWriteDownThroughHighPtr,IfcBugStoreNoValueTaint,IfcBugJumpNoRaisePc,IfcBugJumpLowerPc,IfcBugStoreNoPcTaint,IfcBugAllowWriteDownWithHighPc,IfcBugCallNoRaisePc,IfcBugReturnNoTaint,IfcBugValueOrVoidOnReturn,IfcBugPopPopsReturns]' PROP=LLNI EQUIV=Low STRATEGY=ByExec2 START=QuasiInitial SMART_INTS=True
+picotable-Cally-SSNI-Full-Arbitrary-Naive-True:
+	$(MAKE) picotable INSTRS=Cally BUGS='[IfcBugArithNoTaint,IfcBugPushNoTaint,IfcBugLoadNoTaint,IfcBugStoreNoPointerTaint,IfcBugAllowWriteDownThroughHighPtr,IfcBugStoreNoValueTaint,IfcBugJumpNoRaisePc,IfcBugJumpLowerPc,IfcBugStoreNoPcTaint,IfcBugAllowWriteDownWithHighPc,IfcBugCallNoRaisePc,IfcBugReturnNoTaint,IfcBugValueOrVoidOnReturn,IfcBugPopPopsReturns]' PROP=SSNI EQUIV=Full STRATEGY=Naive START=Arbitrary SMART_INTS=True
+picotable-Cally-SSNI-Full-Arbitrary-TinySSNI-True:
+	$(MAKE) picotable INSTRS=Cally BUGS='[IfcBugArithNoTaint,IfcBugPushNoTaint,IfcBugLoadNoTaint,IfcBugStoreNoPointerTaint,IfcBugAllowWriteDownThroughHighPtr,IfcBugStoreNoValueTaint,IfcBugJumpNoRaisePc,IfcBugJumpLowerPc,IfcBugStoreNoPcTaint,IfcBugAllowWriteDownWithHighPc,IfcBugCallNoRaisePc,IfcBugReturnNoTaint,IfcBugValueOrVoidOnReturn,IfcBugPopPopsReturns]' PROP=SSNI EQUIV=Full STRATEGY=TinySSNI START=Arbitrary SMART_INTS=True
