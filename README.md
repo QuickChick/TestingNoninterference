@@ -4,7 +4,9 @@ Code for Testing Noninterference
 
 ### Description
 
-- Haskell code associated to the "Testing Noninterference, Quickly" paper
+- Haskell code associated to the following paper
+  - Catalin Hritcu, Leonidas Lampropoulos, Antal Spector-Zabusky, Arthur Azevedo de Amorim, Maxime Dénès, John Hughes, Benjamin C. Pierce, and Dimitrios Vytiniotis. Testing Noninterference, Quickly. arXiv:1409.0393. Submitted to Special Issue of Journal of Functional Programming for ICFP 2013. September 2014. (http://arxiv.org/abs/1409.0393)
+  - Catalin Hritcu, John Hughes, Benjamin C. Pierce, Antal Spector-Zabusky, Dimitrios Vytiniotis, Arthur Azevedo de Amorim, Leonidas Lampropoulos. Testing Noninterference, Quickly. In 18th ACM SIGPLAN International Conference on Functional Programming (ICFP). pages 455-468, ACM Press. September 2013. (http://prosecco.gforge.inria.fr/personal/hritcu/publications/testing-noninterference-icfp2013.pdf)
 
 ### Prerequisites
 
@@ -81,7 +83,7 @@ or
 All values (and names for named options) are specified in Flags.hs. Finally,
 you may run:
 
-   ./Driver --help
+    ./Driver --help
 
 to see a list of available options.
 
@@ -90,18 +92,18 @@ to see a list of available options.
 TMUDriver contains flags that can profile tests for some
 basic statistics. Namely, the
 
-   --prop-test=PropJustProfileLengths
+    --prop-test=PropJustProfileLengths
 
 and
 
-   --prop-test=PropJustProfileWF
+    --prop-test=PropJustProfileWF
 
 run profiling on tests with the current configuration. The former is
 profiling execution lenghts, the latter is profiling the reasons for
 termination. You may use --tests to determine the number of tests,
 or --gen-strategy to determine under which strategy you want to profile, etc.
 
--= Bulk testing and profiling =-
+#### Bulk testing and profiling
 
 Some new options have been introduced that help profile/test in the bulk.
 
