@@ -6,6 +6,7 @@ Code for Testing Noninterference
 
 - Haskell code associated to the following paper:
   - Catalin Hritcu, Leonidas Lampropoulos, Antal Spector-Zabusky, Arthur Azevedo de Amorim, Maxime Dénès, John Hughes, Benjamin C. Pierce, and Dimitrios Vytiniotis. Testing Noninterference, Quickly. arXiv:1409.0393. Submitted to Special Issue of Journal of Functional Programming for ICFP 2013. September 2014. (http://arxiv.org/abs/1409.0393)
+- The associated Coq proofs are in a separate repository: https://github.com/QuickChick/IFC
 
 ### Prerequisites
 
