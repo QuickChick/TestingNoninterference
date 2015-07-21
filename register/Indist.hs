@@ -92,7 +92,6 @@ isLowStkElt obs (StkElt (pc,_,_,_)) = isLow (pcLab pc) obs
 filterStack :: Label -> Stack -> Stack
 filterStack obs (Stack s) = Stack $ filter (isLowStkElt obs) s
 
--- CH: unused
 cropTop :: Label -> Stack -> Stack
 cropTop _ (Stack []) = Stack []
 cropTop obs s@(Stack (StkElt (pc, _, _ ,_):s')) =
@@ -107,7 +106,7 @@ instance Indist StkElt where
             && indist obs l1 l2 -- CH: just equality, why not call that?
             && indist obs rs1 rs2
             && indist obs r1 r2 -- CH: just equality, why not call that?
-        else not (isLow (pcLab pc2) obs) 
+        else not (isLow (pcLab pc2) obs)  -- CH: NOT SYMMETRIC! WTF?
 
 indistStack :: PtrAtom -> PtrAtom -> Label -> Stack -> Stack -> Bool
 indistStack (PAtm _ pcl1) (PAtm _ pcl2) obs s1 s2 = 
