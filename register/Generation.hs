@@ -48,6 +48,7 @@ genLabelBetweenLax l1 l2 =
     elements $ filter (\l -> isLow l1 l) $ labelsBelow l2
 
 -- Generate a label in (l1, l2]
+-- CH: comment is wrong
 genLabelBetweenStrict :: Label -> Label -> Gen Label
 genLabelBetweenStrict l1 l2 = 
     elements $ filter (\l -> isLow l1 l && l /= l1) $ labelsBelow l2
@@ -308,8 +309,13 @@ instance SmartVary StkElt where
     smartVary obs info (StkElt (pc, lab, rs, r)) 
         | isLow (pcLab pc) obs = 
             fmap (StkElt . (pc,lab,,r)) $ smartVary obs info rs
-        | otherwise = 
-            fmap (StkElt . (pc,lab,,r)) $ smartGen info 
+        | otherwise = do
+            PAtm addr _ <- smartGen info
+            pcl <- genLabelBetweenStrict obs H
+            lab' <- smartGen info
+            rs' <- smartGen info
+            r' <- smartGen info
+            return (StkElt ((PAtm addr pcl), lab', rs', r'))
 
 -- Not complete! Extra high stack locations created in vary State if possible
 instance SmartVary Stack where
