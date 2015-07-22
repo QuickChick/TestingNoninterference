@@ -27,7 +27,6 @@ instance Indist Int where
     indist = const (==)
 
 -- Value indistinguishability
--- * Ignores the label
 -- * For pointers, it is syntactic equality because of the per-level allocator
 instance Indist Value where
     indist = const (==)
@@ -68,6 +67,8 @@ instance Indist RegSet where
 --   + Low Labels -> Indistinguishable data
 -- * Otherwise both need to be high
 -- * LL: Unclear : One high, one low?
+-- CH: TODO: this is obsolete, remove stamps from frames and match new
+--     definition of memory indistinguishability
 instance Indist a => Indist (Frame a) where
     indist obs (Frame s1 l1 as1) (Frame s2 l2 as2) 
         | isLow s1 obs || isLow s2 obs =
@@ -89,15 +90,12 @@ instance Indist (Mem Atom) where
 isLowStkElt :: Label -> StkElt -> Bool
 isLowStkElt obs (StkElt (pc,_,_,_)) = isLow (pcLab pc) obs
 
-filterStack :: Label -> Stack -> Stack
-filterStack obs (Stack s) = Stack $ filter (isLowStkElt obs) s
-
 cropTop :: Label -> Stack -> Stack
 cropTop _ (Stack []) = Stack []
 cropTop obs s@(Stack (StkElt (pc, _, _ ,_):s')) =
     if isLow (pcLab pc) obs then s else cropTop obs $ Stack s'
 
--- Indistinghuishability of *LOW-PC* Stack Elements
+-- Indistinghuishability of stack elements
 instance Indist StkElt where
     indist obs s1@(StkElt (pc1, l1, rs1, r1)) s2@(StkElt (pc2, l2, rs2, r2)) =
         debug (show ("When comparing", s1, s2)) $ 
@@ -106,7 +104,7 @@ instance Indist StkElt where
             && indist obs l1 l2 -- CH: just equality, why not call that?
             && indist obs rs1 rs2
             && indist obs r1 r2 -- CH: just equality, why not call that?
-        else not (isLow (pcLab pc2) obs)  -- CH: NOT SYMMETRIC! WTF?
+        else True
 
 indistStack :: PtrAtom -> PtrAtom -> Label -> Stack -> Stack -> Bool
 indistStack (PAtm _ pcl1) (PAtm _ pcl2) obs s1 s2 = 
@@ -115,10 +113,9 @@ indistStack (PAtm _ pcl1) (PAtm _ pcl2) obs s1 s2 =
     in debug (show $ ("Cropped", s1', s2')) $ indist obs s1' s2'
            
 -- State indistinguishability
--- * If both pc's are high, memories and stacks must be indistinguishable
---   ++ Could be weakened with reachability
--- * If at least one is low, pairwise indist
-
+-- * memories, instruction memories and stacks must always be indistinguishable
+-- * if one of the pcs labeled low then the pcs and registers must be
+--   indistinguishable too
 debug :: String -> Bool -> Bool
 --debug s x = if not x then unsafePerformIO $ do putStrLn s >> return x else x
 debug s x = x

@@ -55,13 +55,15 @@ genLabelBetweenStrict l1 l2 =
 instance SmartGen Label where
     smartGen _ = genLabelBelow H
 
--- Will always produce an "inbounds" pointer
+-- Will always produce a valid pointer
 instance SmartGen Pointer where
     smartGen (MkInfo _ _ dfs _) = do 
       (mf, len) <- elements dfs 
       addr <- choose (0, len - 1)
       return $ Ptr mf addr
 
+-- Gives some weight to valid instruction pointers
+-- CH: for some reason this is currently only used for variation
 instance SmartGen Int where
     smartGen (MkInfo _ cl _ _) 
         = frequency [(1, pure 0), 
@@ -71,6 +73,7 @@ instance SmartGen Value where
     smartGen info@(MkInfo _ cl dfs _) = 
         frequency $ [--(1, liftM VInt $ smartGen info)
                      (1, liftM VInt $ choose (0, cl - 1))
+                     -- CH: only instruction pointers, wow, no negative ones
                     ,(1, liftM VLab $ smartGen info)]
                     ++ [(1, liftM VPtr $ smartGen info) | not $ null dfs ]
 
@@ -78,31 +81,28 @@ instance SmartGen Atom where
     smartGen info = liftM2 Atom (smartGen info) (smartGen info)
 
 instance SmartGen PtrAtom where
-    smartGen info@(MkInfo Flags{..} cl _ _) = do
-        case strategy of 
-          GenByExec -> liftM (PAtm 0) (smartGen info)
-          GenSSNI   -> liftM2 PAtm (choose (0, cl - 1)) (smartGen info)
+    smartGen info@(MkInfo _ cl _ _) = do
+        liftM2 PAtm (choose (0, cl - 1)) (smartGen info)
 
 instance SmartGen RegSet where
     smartGen info = fmap RegSet $ vectorOf (noRegs info) (smartGen info)
 
 -- Creates a stack element whose PC label is between two labels, strict or lax
 -- based on the function argument
-smartGenStkElt :: (Label -> Label -> Gen Label) -> Label -> Label -> Info -> 
-                  Gen StkElt
-smartGenStkElt f lowPC highPC info = do
+smartGenStkElt :: Info -> Gen StkElt
+smartGenStkElt info = do
   regs        <- smartGen info
   PAtm addr _ <- smartGen info
   target      <- choose (0, noRegs info - 1)
   retLab      <- smartGen info
-  pcLab       <- f lowPC highPC
+  pcLab       <- smartGen info
   return $ StkElt (PAtm addr pcLab, retLab, regs, target)
-    
+
 smartGenStack :: PtrAtom -> Info -> Gen Stack
 smartGenStack pc info = 
     frequency [(1, return $ Stack [])
               ,(9, liftM (Stack . return) $ 
-                 smartGenStkElt genLabelBetweenLax bot (pcLab pc) info)]
+                 smartGenStkElt info)]
 
 isInt :: Atom -> Bool
 isInt (Atom (VInt _) _) = True
@@ -132,9 +132,6 @@ groupRegisters il (r:rs) dptr cptr num lab n
     | isLab r = groupRegisters il rs dptr cptr num (n : lab) (n + 1)
     | otherwise = error "Cases are exhaustive"
     
-containsRet :: Stack -> Bool
-containsRet (Stack s) = not $ null s
-
 -- Generates a structurally valid instruction
 ainstr :: IMemC i => Flags -> Int -> (State i m) -> Gen Instr 
 ainstr f hltWeight st@State{..} = 
@@ -152,7 +149,7 @@ ainstr f hltWeight st@State{..} =
            [(10, liftM2 PutLab (genLabelBelow H) genRegPtr)] ++
            [(10, liftM3 BCall (elements cptr) (elements lab) genRegPtr)
             | not $ null lab || null cptr ] ++
-           [(ifNaive 20 10, pure BRet) | containsRet stack] ++
+           [(ifNaive 20 10, pure BRet) | not $ null $ unStack stack] ++
            [(ifNaive 13 10, liftM3 Alloc (elements num) (elements lab) genRegPtr)
             | not $ null num || null lab] ++
            [(ifNaive 13 10, liftM2 Load (elements dptr) genRegPtr) 
@@ -402,6 +399,12 @@ genEmptyState flags = do
          {- traceShow (Var obs st st') $ -} 
   return $ Var obs st st'
 
+initPc :: Info -> Gen PtrAtom
+initPc info@(MkInfo Flags{..} cl _ _) = do
+          case strategy of 
+               GenByExec -> liftM (PAtm 0) (smartGen info)
+               GenSSNI   -> liftM2 PAtm (choose (0, cl - 1)) (smartGen info)
+
 genVariationState :: (MemC m Atom, IMemC i, SmartVary m, Show i, Show m) => 
                      Flags -> Gen (Variation (State i m))
 genVariationState flags = do 
@@ -410,7 +413,7 @@ genVariationState flags = do
   codeSize <- choose (minCodeSize, maxCodeSize)
   let imem = fromInstrList $ replicate codeSize Noop
       info = MkInfo flags codeSize dfs noRegisters
-  pc    <- smartGen info
+  pc    <- initPc info
   regs  <- smartGen info
   stack <- smartGenStack pc info
   mem   <- populateMemory info initMem
