@@ -5,10 +5,8 @@ module Generation where
 import Test.QuickCheck
 
 import Control.Monad
-import Control.Applicative
 
 import Data.Maybe
-import Debug.Trace
 
 import Labels
 import Memory

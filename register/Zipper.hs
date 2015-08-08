@@ -2,7 +2,6 @@
 module Zipper where
 
 import Data.List 
-import Data.Maybe
 
 data Zipper a = Zipper { front   :: [a]
                        , current :: a

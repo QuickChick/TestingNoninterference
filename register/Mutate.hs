@@ -2,7 +2,6 @@
 module Mutate where
 
 import Control.Monad
-import Control.Arrow
 import Data.Maybe
 import Rules
 import qualified Data.Map as Map

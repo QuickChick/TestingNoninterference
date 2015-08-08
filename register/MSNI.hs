@@ -1,10 +1,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 module MSNI where
 
-import Debug.Trace
-
 import Test.QuickCheck
-import Test.QuickCheck.Property
 
 import Machine
 import Primitives
@@ -13,18 +10,8 @@ import Instructions
 import Rules
 import Memory
 
-import Control.Monad
-
 import Indist    
-import Generation
-import Shrinking
 import Flags
-    
-import Pretty
-import Text.PrettyPrint (($$), text)
-import qualified Text.PrettyPrint as PP
-
-import System.IO.Unsafe
 
 propMSNI :: (MemC m Atom, IMemC i, Indist i, Indist m) => 
             Flags -> RuleTable -> Variation (State i m) -> Property

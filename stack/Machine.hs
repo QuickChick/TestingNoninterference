@@ -6,7 +6,6 @@ module Machine where
 import Test.QuickCheck.Gen
 import Test.QuickCheck
 import Control.Monad
-import Control.Applicative
 import Text.PrettyPrint hiding (int)
 import Data.Function
 import Data.List ( find, groupBy)

@@ -2,10 +2,7 @@
 
 module LLNI where
 
-import Debug.Trace
-
 import Test.QuickCheck
-import Test.QuickCheck.Property
 
 import Machine
 import Primitives
@@ -14,17 +11,9 @@ import Instructions
 import Rules
 import Memory
 
-import Control.Monad
-
 import Indist    
-import Generation
-import Shrinking
 import Flags
     
-import Pretty
-import Text.PrettyPrint (($$), text)
-import qualified Text.PrettyPrint as PP
-
 propLLNI :: (MemC m Atom, IMemC i, Indist i, Indist m) => 
             Flags -> RuleTable -> Variation (State i m) -> Property
 propLLNI Flags{..} t (Var obs st1 st2) =
@@ -42,4 +31,3 @@ propLLNI Flags{..} t (Var obs st1 st2) =
       property
 --    in property $ --whenFail (putStrLn (show sts1') >> putStrLn (show sts2')) $
        $ (and $ zipWith (indist obs) sts1' sts2')
-

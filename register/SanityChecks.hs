@@ -2,7 +2,6 @@
 module SanityChecks where
 
 import Test.QuickCheck
-import Test.QuickCheck.Property
 
 import Machine
 import Reachability

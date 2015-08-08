@@ -8,7 +8,6 @@ import Test.QuickCheck
 import Test.QuickCheck.Random
 
 import Control.Monad
-import Control.Applicative
 import Control.Arrow()
 import Data.List (genericLength, unzip4)
 

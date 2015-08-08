@@ -5,7 +5,6 @@ module Instr where
 import Test.QuickCheck.Gen
 import Test.QuickCheck
 import Control.Monad
-import Control.Applicative
 
 import Labels
 import Flags

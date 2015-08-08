@@ -3,7 +3,6 @@ module Driver where
 
 import Test.QuickCheck
 import qualified Test.QuickCheck.Property as QCProp
-import Test.QuickCheck.Random
 import qualified Test.QuickCheck.State as St
 
 import Primitives
@@ -32,7 +31,6 @@ import Data.List
 import Data.Maybe
 
 import Control.Monad
-import Debug.Trace
 
 foundBug :: Result -> Bool
 foundBug Failure{} = True
@@ -209,6 +207,8 @@ checkTimeoutProperty flags table = do
                                     , disc_c = disc_c counters + realDiscards }
 --                    putStrLn "GaveUp!?" >> error "Bailing out!"
                 Right (NoExpectedFailure {}) -> 
+                    putStrLn "NoExpectedFailure!?" >> error "Bailing out"
+                Right (InsufficientCoverage {}) -> 
                     putStrLn "NoExpectedFailure!?" >> error "Bailing out"
 
 means :: [Maybe Rational] -> (Maybe Double, Maybe Double, Maybe Double)

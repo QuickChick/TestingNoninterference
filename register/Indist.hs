@@ -3,9 +3,6 @@ module Indist where
 
 import Data.Maybe
 
-import Debug.Trace
-import System.IO.Unsafe
-
 
 import Labels
 import Primitives

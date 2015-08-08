@@ -2,10 +2,7 @@
 
 module EENI where
 
-import Debug.Trace
-
 import Test.QuickCheck
-import Test.QuickCheck.Property
 
 import Machine
 import Primitives
@@ -14,17 +11,9 @@ import Instructions
 import Rules
 import Memory
 
-import Control.Monad
-
 import Indist    
-import Generation
-import Shrinking
 import Flags
     
-import Pretty
-import Text.PrettyPrint (($$), text)
-import qualified Text.PrettyPrint as PP
-
 propEENI :: (MemC m Atom, IMemC i, Indist i, Indist m) => 
             Flags -> RuleTable -> Variation (State i m) -> Property
 propEENI Flags{..} t (Var obs st1 st2) =
@@ -41,3 +30,4 @@ propEENI Flags{..} t (Var obs st1 st2) =
              let p (Atom (VInt _) l) = l `flowsTo` obs 
                  p _ = False
              in filter p (unRegSet $ regs st1') == filter p (unRegSet $ regs st2')
+         _ -> error "Unexpected (EENI)"

@@ -355,13 +355,13 @@ profileTests
                  ; putStrLn $ "\\multicolumn{2}{l}{Average number of execution steps: "
                             ++ astr ++ "}\\\\\\midrule"
                  ; let ls = filter (\(_l,n)->n>0) $
-                            sortBy (\(_l,n) (_l',n') -> compare n' n) (labels r)
+                            sortBy (\(_l,n) (_l',n') -> compare n' n) (Test.QuickCheck.labels r)
                  ; mapM_ (\(l,n) -> printf "%d\\%% & %s \\\\\n" n (read l :: String)) ls 
                  ; putStrLn "\\end{tabular}"
                  ; putStrLn "\\fi%"
                  }
          else
-           print (labels r)
+           print (Test.QuickCheck.labels r)
 
        }
   where
@@ -421,7 +421,7 @@ profileVariations
              --                  bstr1 ++ " & " ++ bstr2 ++ "\\\\"
                               
              ; let ls = filter (\(_l,n) -> n > 0) $
-                        sortBy (\(_l,n) (_l',n') -> compare n' n) (labels r)
+                        sortBy (\(_l,n) (_l',n') -> compare n' n) (Test.QuickCheck.labels r)
              ; mapM_ (\(l,n) ->
                          let (l1::String,l2::String) = read l
                          in printf "%d\\%% & %s & %s \\\\\n" n l1 l2) ls
@@ -496,6 +496,8 @@ checkProperty discard_ref pr microsecs
                   Nothing              -> putStrLn "Timeout"
                   Just (Success {})    -> putStrLn "Success"
                   Just (GaveUp {})     -> putStrLn "Gave up"
+                  Just (InsufficientCoverage {}) ->
+                       putStrLn "Insufficient Coverage"
                   Just (NoExpectedFailure {}) -> putStrLn "No expected failure"
                   Just (Failure { reason = res }) | "timeout" `isInfixOf` res -> 
                        putStrLn "Timeout (caught by QC)" 
@@ -589,6 +591,8 @@ checkTimeoutProperty
                           in check_prop_loop disc_ref counters' (microsecs - used_microsecs)
                     Right (GaveUp {}) -> putStrLn "GaveUp!?" >> error "Bailing out!"
                     Right (NoExpectedFailure {}) -> putStrLn "NoExpectedFailure!?" >> error "Bailing out"
+                    Right (InsufficientCoverage {}) ->
+                       error "Bailing out (Insufficient Coverage)"
                }
 
 

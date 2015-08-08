@@ -1,8 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 module SSNI where
 
-import Debug.Trace
-
 import Test.QuickCheck
 import Test.QuickCheck.Property
 
@@ -16,13 +14,7 @@ import Memory
 import Control.Monad
 
 import Indist    
-import Generation
-import Shrinking
 import Flags
-    
-import Pretty
-import Text.PrettyPrint (($$), text)
-import qualified Text.PrettyPrint as PP
 
 propSSNI :: (MemC m Atom, IMemC i, Indist m, Indist i) => 
             Flags -> RuleTable -> Variation (State i m)-> Property
